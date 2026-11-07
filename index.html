@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="sw">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#09090b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Youflix">
+<meta name="description" content="Youflix — Tazama • Stream • Furahia">
+<title>Youflix</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="splash" aria-hidden="true">
+  <div class="sp-logo"></div>
+  <p class="sp-tag">BURUDANI BILA KIKOMO</p>
+  <div class="sp-bar"><b></b></div>
+</div>
+
+<header class="top">
+  <button id="btnMenu" class="icon-btn" aria-label="Menyu"><svg class="ico" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  <a class="brand" href="#home" aria-label="Youflix"></a>
+  <div class="tr">
+    <button id="btnSearch" class="icon-btn" aria-label="Tafuta"><svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button>
+    <button id="btnLogin" class="pill red"></button>
+  </div>
+</header>
+
+<div id="searchBar" class="searchbar" hidden>
+  <input id="q" type="search" autocomplete="off">
+</div>
+
+<div id="scrim" class="scrim"></div>
+<aside id="drawer" class="drawer" aria-label="Menyu">
+  <div class="dr-head">
+    <a class="brand" href="#home" aria-label="Youflix"></a>
+    <button id="drClose" class="icon-btn" aria-label="Funga"><svg class="ico" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+  </div>
+  <div class="seg" id="seg"><button type="button" data-lang="en">EN</button><button type="button" data-lang="sw">SW</button></div>
+  <form class="dr-search" id="drSearch">
+    <svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+    <input id="dq" type="search" autocomplete="off">
+  </form>
+  <nav class="dr-nav" id="drNav"></nav>
+</aside>
+
+<main id="app" tabindex="-1"></main>
+
+<footer class="foot">
+  <div class="frow"><button id="btnAdmin" class="lock" aria-label="Admin"><svg class="ico" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></button>
+  <span class="brand" role="img" aria-label="Youflix"></span></div>
+  <p class="ft" data-t="foot_tag"></p>
+  <nav class="fl" aria-label="Footer">
+    <a href="#home" data-t="nav_home"></a><a href="#movies" data-t="nav_movies"></a><a href="#series" data-t="nav_series"></a><a href="#mylist" data-t="nav_mylist"></a>
+  </nav>
+  <p class="fc">&copy; <span id="footYear"></span> Youflix &middot; <span data-t="foot_rights"></span></p>
+</footer>
+
+<div id="player" class="player" hidden>
+  <div class="player-box">
+    <button id="closePlayer" class="close" aria-label="Funga">&#10005;</button>
+    <div id="stage" class="stage"></div>
+    <div class="player-info">
+      <h2 id="pTitle"></h2>
+      <p id="pMeta" class="meta"></p>
+      <p id="pDesc"></p>
+      <div class="row-btns">
+        <button id="pList" class="btn ghost"></button>
+        <button id="pShare" class="btn ghost" data-t="share"></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="auth" class="modal" hidden></div>
+<div id="admin" class="modal" hidden></div>
+<div id="toast" class="toast" hidden></div>
+<noscript><p style="padding:20px">Washa JavaScript ili kutumia Youflix.</p></noscript>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
