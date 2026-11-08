@@ -19,6 +19,8 @@ export default function Admin({ onClose }) {
   const [formKey, setFormKey] = useState(0);   // kusafisha fomu baada ya kuhifadhi
   const [customers, setCustomers] = useState([]);
   const [customerBusy, setCustomerBusy] = useState(false);
+  const [requests, setRequests] = useState([]);
+  const [requestBusy, setRequestBusy] = useState(false);
   const loadCustomers = async () => {
     if (!supabase || customerBusy) return;
     setCustomerBusy(true);
@@ -36,6 +38,41 @@ export default function Admin({ onClose }) {
     } catch (err) {
       notify(err?.message || "Imeshindikana kupakia wateja.");
     } finally { setCustomerBusy(false); }
+  };
+
+
+  const loadRequests = async () => {
+    if (!supabase || requestBusy) return;
+    setRequestBusy(true);
+    try {
+      const { data, error } = await supabase.from("subscription_requests")
+        .select("id,full_name,phone,plan,price_tzs,status,payment_status,submitted_by,created_at")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setRequests(Array.isArray(data) ? data : []);
+    } catch (err) {
+      notify(err?.message || "Imeshindikana kupakia maombi ya vifurushi.");
+    } finally { setRequestBusy(false); }
+  };
+
+  const approveRequest = async (r) => {
+    if (!r.submitted_by) return notify("Ombi hili halijaunganishwa na akaunti ya mteja.");
+    if (r.payment_status === "paid" || r.status === "approved") return notify("Ombi hili tayari limeidhinishwa.");
+    if (!window.confirm("Thibitisha kuwa umepokea malipo ya " + (r.price_tzs || 0) + " TSh kutoka kwa " + r.full_name + "?")) return;
+    const days = r.plan === "Siku" ? 1 : r.plan === "Wiki" ? 7 : 30;
+    const starts = new Date();
+    const ends = new Date(starts);
+    ends.setDate(ends.getDate() + days);
+    const { error: subError } = await supabase.from("subscriptions").insert({
+      request_id: r.id, user_id: r.submitted_by, plan: r.plan,
+      starts_at: starts.toISOString(), ends_at: ends.toISOString(), status: "active",
+    });
+    if (subError) return notify(subError.message || "Imeshindikana kuwasha kifurushi.");
+    const { error: reqError } = await supabase.from("subscription_requests")
+      .update({ payment_status: "paid", status: "approved" }).eq("id", r.id);
+    if (reqError) return notify("Kifurushi kimewashwa lakini ombi halikusasishwa: " + reqError.message);
+    notify("Malipo yamethibitishwa na kifurushi kimewashwa.");
+    loadRequests();
   };
 
   const switchTab = (k) => { setTab(k); setEdit(null); setPoster(null); setBanner(null); setFormKey((x) => x + 1); };
@@ -364,7 +401,32 @@ export default function Admin({ onClose }) {
     </>
   );
 
-  const tabs = [["videos", "ad_tab_videos"], ["customers", "Wateja"], ["banners", "ad_tab_banners"], ["data", "ad_tab_data"]];
+
+  const requestsTab = (
+    <>
+      <h2 className="sec">Maombi ya Vifurushi ({requests.length})</h2>
+      <div className="set">
+        <button className="btn" type="button" onClick={loadRequests} disabled={requestBusy}>
+          {requestBusy ? "Inapakia..." : "Onyesha / Sasisha maombi"}
+        </button>
+      </div>
+      {requests.length === 0 && <p className="empty">Hakuna maombi yaliyoonyeshwa. Bonyeza Onyesha / Sasisha maombi.</p>}
+      {requests.map((r) => (
+        <div className="ad-row" key={r.id}>
+          <span className="th" aria-hidden="true">🎟️</span>
+          <span className="info">
+            <b>{r.full_name} · {r.plan}</b>
+            <small>{r.phone} · TSh {Number(r.price_tzs || 0).toLocaleString("en-US")}</small>
+            <small>{r.payment_status === "paid" ? "Malipo yamethibitishwa" : "Malipo hayajathibitishwa"} · {r.status}</small>
+          </span>
+          {r.status === "pending" && r.payment_status !== "paid" &&
+            <button className="btn" type="button" onClick={() => approveRequest(r)}>Thibitisha malipo</button>}
+        </div>
+      ))}
+    </>
+  );
+
+  const tabs = [["videos", "ad_tab_videos"], ["customers", "Wateja"], ["requests", "Vifurushi"], ["banners", "ad_tab_banners"], ["data", "ad_tab_data"]];
   return (
     <div id="admin" className="modal">
       <div className="ad">
@@ -375,7 +437,7 @@ export default function Admin({ onClose }) {
         <div className="ad-tabs">
           {tabs.map(([k, label]) => <button key={k} className={"chip" + (tab === k ? " on" : "")} onClick={() => switchTab(k)}>{t(label)}</button>)}
         </div>
-        {tab === "videos" ? videosTab : tab === "customers" ? customersTab : tab === "banners" ? bannersTab : dataTab}
+        {tab === "videos" ? videosTab : tab === "customers" ? customersTab : tab === "requests" ? requestsTab : tab === "banners" ? bannersTab : dataTab}
       </div>
     </div>
   );
