@@ -200,7 +200,7 @@ export default function Admin({ onClose }) {
       }
     }
     const rec = {
-      title: o.title, video_url: o.src || "", category: o.type === "series" ? "Mfululizo" : "Filamu",
+      title: o.title, video_url: o.src || "", category: o.genre === "Tamthilia" ? "Mfululizo" : "Filamu",
       genre: o.genre || "", release_year: parseInt(o.year, 10) || new Date().getFullYear(),
       duration: o.dur || "", description: o.desc || "", poster_url: img || null, published: true,
     };
@@ -231,11 +231,6 @@ export default function Admin({ onClose }) {
       <form className="form" key={formKey} onSubmit={saveVideo}>
         <label>{t("f_title")}<input name="title" required maxLength={80} defaultValue={e0.title || ""} /></label>
         <label>{t("f_src")}<input name="src" type="url" placeholder="https://..." defaultValue={e0.src || ""} /></label>
-        <label>Muundo wa video
-          <select name="type" defaultValue={e0.type === "series" ? "series" : "movie"}>
-            <option value="movie">{t("k_movie")}</option><option value="series">{t("k_series")}</option>
-          </select>
-        </label>
         <label>Aina ya video
           <select name="genre" defaultValue={GENRES.includes(e0.genre) ? e0.genre : ""} required>
             <option value="" disabled>Chagua aina ya video</option>
