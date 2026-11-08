@@ -205,15 +205,17 @@ export default function Admin({ onClose }) {
       <form className="form" key={formKey} onSubmit={saveVideo}>
         <label>{t("f_title")}<input name="title" required maxLength={80} defaultValue={e0.title || ""} /></label>
         <label>{t("f_src")}<input name="src" type="url" placeholder="https://..." defaultValue={e0.src || ""} /></label>
-        <label>{t("f_type")}
+        <label>Muundo wa video
           <select name="type" defaultValue={e0.type === "series" ? "series" : "movie"}>
             <option value="movie">{t("k_movie")}</option><option value="series">{t("k_series")}</option>
           </select>
         </label>
-        <label>{t("f_genre")}<select name="genre" defaultValue={GENRES.includes(e0.genre) ? e0.genre : ""} required>
-          <option value="" disabled>Chagua kundi la video</option>
-          {GENRES.map((g) => <option key={g} value={g}>{g}</option>)}
-        </select></label>
+        <label>Aina ya video
+          <select name="genre" defaultValue={GENRES.includes(e0.genre) ? e0.genre : ""} required>
+            <option value="" disabled>Chagua aina ya video</option>
+            {GENRES.map((g) => <option key={g} value={g}>{g}</option>)}
+          </select>
+        </label>
         <label>{t("ad_f_year")}<input name="year" type="number" inputMode="numeric" min="1900" max="2100" defaultValue={e0.year || new Date().getFullYear()} /></label>
         <label>{t("ad_f_dur")}<input name="dur" maxLength={20} defaultValue={e0.dur || ""} /></label>
         <label>{t("f_desc")}<input name="desc" maxLength={300} defaultValue={e0.desc || ""} /></label>
