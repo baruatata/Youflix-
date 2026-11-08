@@ -200,10 +200,11 @@ export default function Admin({ onClose }) {
       }
     }
     const rec = {
-      title: o.title, video_url: o.src || "", category: o.genre === "Tamthilia" ? "Mfululizo" : "Filamu",
+      title: o.title, category: o.genre === "Tamthilia" ? "Mfululizo" : "Filamu",
       genre: o.genre || "", release_year: parseInt(o.year, 10) || new Date().getFullYear(),
       duration: o.dur || "", description: o.desc || "", poster_url: img || null, published: true,
     };
+    if (o.src) rec.video_url = o.src;
     const isEdit = !!editing;
     const result = isEdit
       ? await supabase.from("media").update(rec).eq("id", edit).select("id").single()
