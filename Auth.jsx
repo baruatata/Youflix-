@@ -4,6 +4,12 @@ import { useStore } from "./store.jsx";
 import { supabase } from "./supabase.js";
 import { fmtPhone, normPhone } from "./utils.js";
 
+const SIGNUP_PLANS = [
+  { id: "Siku", days: 1, price: 500 },
+  { id: "Wiki", days: 7, price: 2000 },
+  { id: "Mwezi", days: 30, price: 7000 },
+];
+
 export default function Auth({ onClose }) {
   const { state, update, t, notify } = useStore();
   const [step, setStep] = useState(1);
@@ -13,6 +19,7 @@ export default function Auth({ onClose }) {
   const [pass, setPass] = useState("");
   const [keptPass, setKeptPass] = useState("");
   const [name, setName] = useState("");
+  const [signupPlan, setSignupPlan] = useState("Siku");
   const [show, setShow] = useState(false);
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -76,7 +83,20 @@ export default function Auth({ onClose }) {
         });
         if (error) throw new Error(data?.error || error.message || "Usajili haukufanikiwa.");
         if (data?.error) throw new Error(data.error);
+        const chosenPlan = SIGNUP_PLANS.find((p) => p.id === signupPlan) || SIGNUP_PLANS[0];
+        const { error: requestError } = await supabase.from("subscription_requests").insert({
+          full_name: name.trim(),
+          phone,
+          plan: chosenPlan.id,
+          price_tzs: chosenPlan.price,
+          submitted_by: data.user.id,
+        });
         await completeLogin(data);
+        if (requestError) {
+          notify("Akaunti imetengenezwa, lakini ombi la kifurushi halikutumwa: " + requestError.message);
+        } else {
+          notify("Usajili umekamilika. Ombi la kifurushi cha " + chosenPlan.id + " limetumwa kwa Admin.");
+        }
       }
     } catch (err) {
       notify(err?.message || "Imeshindikana. Tafadhali jaribu tena.");
@@ -167,7 +187,16 @@ export default function Auth({ onClose }) {
                 <input id="apName" type="text" autoFocus autoComplete="name" maxLength={60} value={name}
                   onChange={(e) => setName(e.target.value)} />
               </div>
-              <p className="help" />
+              <label className="ap-label" htmlFor="signupPlan">Chagua kifurushi</label>
+              <select id="signupPlan" value={signupPlan} onChange={(e) => setSignupPlan(e.target.value)}
+                style={{ width: "100%", minHeight: 48, marginTop: 8, padding: "10px 12px", borderRadius: 10 }}>
+                {SIGNUP_PLANS.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.id === "Siku" ? "Siku 1" : p.id === "Wiki" ? "Wiki 7" : "Mwezi 30"} — TSh {p.price.toLocaleString("en-US")}
+                  </option>
+                ))}
+              </select>
+              <p className="help">Kifurushi kitaanza baada ya Admin kuthibitisha malipo. Hakuna malipo ya moja kwa moja yanayokatwa hapa.</p>
             </>
           )}
 
