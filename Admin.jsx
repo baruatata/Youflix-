@@ -2,7 +2,7 @@ import { useState } from "react";
 import { supabase } from "./supabase.js";
 import Icon from "./Icon";
 import { useStore } from "./store.jsx";
-import { download, okImg, posterStyle, readImage, sha } from "./utils.js";
+import { download, newSalt, okImg, posterStyle, readImage, sha } from "./utils.js";
 
 // Barua pepe ya admin haiko wazi kwenye msimbo — kuna alama yake iliyosimbwa (SHA-256) tu.
 // Ili kubadilisha admin: sha256("barua@pepe.com" kwa herufi ndogo) na uiweke hapa (pamoja na toleo mbadala la "f..." kwa vivinjari visivyo na crypto.subtle).
