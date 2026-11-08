@@ -150,14 +150,6 @@ export default function Auth({ onClose }) {
           <span className="brand" role="img" aria-label="Youflix" />
         </div>
         <span className="wpill"><Icon name="sparkle" size={18} />{t("a_welcome_pill")}</span>
-        <p className="ap-sub">{t("a_tagline")}</p>
-        <div className="ap-feats">
-          <span><Icon name="movies" />{t("feat1")}</span>
-          <span><Icon name="kids" />{t("c_kids")}</span>
-          <span><Icon name="mylist" />{t("nav_mylist")}</span>
-          <span><Icon name="series" />{t("feat4")}</span>
-        </div>
-
         <div className="ap-card">
           <div className="steps">
             <b className={c(1)}>{step > 1 ? <Icon name="check" size={18} /> : "1"}</b><i />
