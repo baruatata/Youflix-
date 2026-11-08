@@ -12,7 +12,10 @@ async function requireAdmin(req) {
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
   if (!token || !supabaseUrl || !supabaseKey) throw new Error("MISSING_AUTH");
-  const sb = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  const sb = createClient(supabaseUrl, supabaseKey, {
+    global: { headers: { Authorization: "Bearer " + token } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
   const { data: { user }, error } = await sb.auth.getUser(token);
   if (error || !user) throw new Error("UNAUTHORIZED");
   const { data: profile, error: profileError } = await sb.from("profiles").select("role").eq("id", user.id).single();
