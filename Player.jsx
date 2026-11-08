@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useStore } from "../lib/store";
-import { ytId } from "../lib/utils";
+import { useStore } from "./store.jsx";
+import { ytId } from "./utils.js";
 
 export default function Player({ video, onClose }) {
   const { state, update, t, notify } = useStore();
