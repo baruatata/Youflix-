@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useStore } from "./store.jsx";
 import { supabase } from "./supabase.js";
 
@@ -15,31 +15,72 @@ export default function Join({ onLogin }) {
   const [plan, setPlan] = useState("Siku");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [pendingRequest, setPendingRequest] = useState(null);
+  const [loadingPending, setLoadingPending] = useState(false);
   const selected = PLANS.find((p) => p.id === plan) || PLANS[0];
   const current = state.subscription;
   const hasActivePlan = !!current && current.status === "active" &&
     Number.isFinite(Date.parse(current.ends_at)) && Date.parse(current.ends_at) > Date.now();
+
+  useEffect(() => {
+    let alive = true;
+    const loadPending = async () => {
+      if (!me || !supabase) return;
+      setLoadingPending(true);
+      try {
+        const { data, error } = await supabase.from("subscription_requests")
+          .select("id,plan,price_tzs,admin_notes")
+          .eq("submitted_by", me.id).eq("status", "pending")
+          .neq("payment_status", "paid")
+          .order("created_at", { ascending: false }).limit(1).maybeSingle();
+        if (error) throw error;
+        if (alive && data) {
+          setPendingRequest(data);
+          setPlan(data.plan || "Siku");
+          setSent(true);
+        }
+      } catch (err) {
+        if (alive) notify(err?.message || "Imeshindikana kupata ombi lako linalosubiri.");
+      } finally { if (alive) setLoadingPending(false); }
+    };
+    loadPending();
+    return () => { alive = false; };
+  }, [me?.id]);
 
   const request = async () => {
     if (!me) return onLogin();
     if (!supabase || busy) return;
     setBusy(true);
     try {
-      const { data: pending, error: pendingError } = await supabase.from("subscription_requests")
-        .select("id").eq("submitted_by", me.id).eq("status", "pending").limit(1);
-      if (pendingError) throw pendingError;
-      if (pending?.length) throw new Error("Tayari una ombi la kifurushi linalosubiri Admin. Subiri lijibiwe kwanza.");
-      const { error } = await supabase.from("subscription_requests").insert({
+      let requestId = pendingRequest?.id;
+      if (!requestId) {
+        const { data: pending, error: pendingError } = await supabase.from("subscription_requests")
+          .select("id,plan,price_tzs,admin_notes").eq("submitted_by", me.id)
+          .eq("status", "pending").neq("payment_status", "paid")
+          .order("created_at", { ascending: false }).limit(1).maybeSingle();
+        if (pendingError) throw pendingError;
+        if (pending) {
+          requestId = pending.id;
+          setPendingRequest(pending);
+        }
+      }
+      const payload = {
         full_name: me.name || "Mteja",
         phone: me.contact || "",
         plan: selected.id,
         price_tzs: selected.price,
         submitted_by: me.id,
-        admin_notes: hasActivePlan ? "CHANGE_PLAN_REQUEST" : null,
-      });
-      if (error) throw error;
+        admin_notes: pendingRequest?.admin_notes || (hasActivePlan ? "CHANGE_PLAN_REQUEST" : null),
+      };
+      const result = requestId
+        ? await supabase.from("subscription_requests").update(payload).eq("id", requestId)
+        : await supabase.from("subscription_requests").insert(payload);
+      if (result.error) throw result.error;
+      setPendingRequest({ id: requestId, ...payload });
       setSent(true);
-      notify(hasActivePlan ? "Ombi la kubadilishiwa kifurushi limetumwa kwa Admin." : "Ombi la kifurushi limetumwa.");
+      notify(requestId
+        ? "Ombi lako limesasishwa. Tumia maelekezo mapya ya malipo."
+        : hasActivePlan ? "Ombi la kubadilishiwa kifurushi limetumwa kwa Admin." : "Ombi la kifurushi limetumwa.");
     } catch (err) {
       notify(err?.message || "Imeshindikana kutuma ombi. Jaribu tena.");
     } finally {
@@ -58,7 +99,7 @@ export default function Join({ onLogin }) {
           <span>Ingia kwenye akaunti yako ili kuomba kifurushi.</span>
           <button className="btn" onClick={onLogin}>Ingia</button>
         </div>
-      ) : sent ? (
+      ) : loadingPending ? (\n        <p className="help">Inapakia ombi lako...</p>\n      ) : sent ? (
         <div className="toggle" style={{ marginTop: 16, display: "block" }}>
           <strong>Ombi limepokelewa.</strong>
           <p className="help">{hasActivePlan
@@ -81,6 +122,9 @@ export default function Join({ onLogin }) {
               TUMA TAARIFA WHATSAPP
             </a>
           </div>
+          <button className="btn ghost" type="button" style={{ marginTop: 14 }} onClick={() => setSent(false)}>
+            Badili Kifurushi
+          </button>
           <p className="help">Huduma kwa wateja: WhatsApp +255717001506.</p>
         </div>
       ) : (
@@ -109,7 +153,7 @@ export default function Join({ onLogin }) {
           <p className="help">{hasActivePlan
             ? "Ombi lako litahitaji idhini ya Admin kabla ya kifurushi kubadilika."
             : "Njia ya malipo itaelekezwa baada ya kuthibitishwa na huduma kwa wateja. Usitume fedha kabla ya kupata maelekezo rasmi."}</p>
-          <button className="btn" type="button" disabled={busy} onClick={request}>
+          <button className="btn" type="button" disabled={busy || loadingPending} onClick={request}>
             {busy ? "Inatuma ombi..." : hasActivePlan ? "Omba Kubadilishiwa Kifurushi" : "Omba Kifurushi"}
           </button>
         </>
