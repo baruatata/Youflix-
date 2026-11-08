@@ -11,11 +11,16 @@ export default function NotificationCenter() {
     if (!supabase || busy) return;
     setBusy(true);
     try {
-      const { data, error } = await supabase.from("admin_notifications")
-        .select("id,title,message,created_at,read_at")
-        .order("created_at", { ascending: false }).limit(15);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) return;
+      const { data, error } = await supabase.functions.invoke("admin-messaging", {
+        body: { action: "get_notifications" },
+        headers: { Authorization: "Bearer " + token },
+      });
       if (error) throw error;
-      setItems(Array.isArray(data) ? data : []);
+      if (data?.error) throw new Error(data.error);
+      setItems(Array.isArray(data?.notifications) ? data.notifications : []);
     } catch (error) {
       console.error("Youflix notifications:", error);
     } finally {
@@ -35,10 +40,16 @@ export default function NotificationCenter() {
     if (item.read_at || !supabase) return;
     const readAt = new Date().toISOString();
     setItems((current) => current.map((x) => x.id === item.id ? { ...x, read_at: readAt } : x));
-    const { error } = await supabase.from("admin_notifications").update({ read_at: readAt }).eq("id", item.id);
-    if (error) {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData?.session?.access_token;
+    if (!token) return;
+    const { data, error } = await supabase.functions.invoke("admin-messaging", {
+      body: { action: "mark_notification_read", notification_id: item.id },
+      headers: { Authorization: "Bearer " + token },
+    });
+    if (error || data?.error) {
       setItems((current) => current.map((x) => x.id === item.id ? { ...x, read_at: null } : x));
-      console.error("Notification read update failed:", error);
+      console.error("Notification read update failed:", error || data?.error);
     }
   };
 
