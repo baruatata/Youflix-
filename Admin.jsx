@@ -17,6 +17,26 @@ export default function Admin({ onClose }) {
   const [poster, setPoster] = useState(null);  // picha ya jalada (data URL) iliyochaguliwa
   const [banner, setBanner] = useState(null);  // picha ya bango iliyochaguliwa
   const [formKey, setFormKey] = useState(0);   // kusafisha fomu baada ya kuhifadhi
+  const [customers, setCustomers] = useState([]);
+  const [customerBusy, setCustomerBusy] = useState(false);
+  const loadCustomers = async () => {
+    if (!supabase || customerBusy) return;
+    setCustomerBusy(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) throw new Error("Tafadhali ingia tena kama Admin.");
+      const { data, error } = await supabase.functions.invoke("phone-account-auth", {
+        body: { action: "list_customers" },
+        headers: { Authorization: "Bearer " + token },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setCustomers(Array.isArray(data?.customers) ? data.customers : []);
+    } catch (err) {
+      notify(err?.message || "Imeshindikana kupakia wateja.");
+    } finally { setCustomerBusy(false); }
+  };
 
   const switchTab = (k) => { setTab(k); setEdit(null); setPoster(null); setBanner(null); setFormKey((x) => x + 1); };
 
@@ -301,7 +321,29 @@ export default function Admin({ onClose }) {
     </>
   );
 
-  const tabs = [["videos", "ad_tab_videos"], ["banners", "ad_tab_banners"], ["data", "ad_tab_data"]];
+  const customersTab = (
+    <>
+      <h2 className="sec">Wateja ({customers.length})</h2>
+      <div className="set">
+        <button className="btn" type="button" onClick={loadCustomers} disabled={customerBusy}>
+          {customerBusy ? "Inapakia..." : "Onyesha / Sasisha wateja"}
+        </button>
+      </div>
+      {customers.length === 0 && <p className="empty">{customerBusy ? "Inapakia taarifa za wateja..." : "Hakuna wateja walioonyeshwa. Bonyeza Onyesha / Sasisha wateja."}</p>}
+      {customers.map((c) => (
+        <div className="ad-row" key={c.id}>
+          <span className="th" aria-hidden="true">👤</span>
+          <span className="info">
+            <b>{c.full_name || "Mteja"}</b>
+            <small>{c.phone || "Hakuna namba"}{c.created_at ? " • " + new Date(c.created_at).toLocaleDateString("sw-TZ") : ""}</small>
+          </span>
+          <small>{c.role === "customer" ? "Mteja" : c.role}</small>
+        </div>
+      ))}
+    </>
+  );
+
+  const tabs = [["videos", "ad_tab_videos"], ["customers", "Wateja"], ["banners", "ad_tab_banners"], ["data", "ad_tab_data"]];
   return (
     <div id="admin" className="modal">
       <div className="ad">
@@ -312,7 +354,7 @@ export default function Admin({ onClose }) {
         <div className="ad-tabs">
           {tabs.map(([k, label]) => <button key={k} className={"chip" + (tab === k ? " on" : "")} onClick={() => switchTab(k)}>{t(label)}</button>)}
         </div>
-        {tab === "videos" ? videosTab : tab === "banners" ? bannersTab : dataTab}
+        {tab === "videos" ? videosTab : tab === "customers" ? customersTab : tab === "banners" ? bannersTab : dataTab}
       </div>
     </div>
   );
