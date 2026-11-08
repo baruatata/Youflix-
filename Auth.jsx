@@ -132,9 +132,18 @@ export default function Auth({ onClose }) {
                   <span>{t("a_terms_pre")}<em>{t("a_terms")}</em>{t("a_and")}<em>{t("a_privacy")}</em></span>
                 </label>
               )}
-              <button type="button" className="ap-link" onClick={() => { setMode((m) => m === "signup" ? "login" : "signup"); setAgree(false); setPass(""); }}>
-                {mode === "signup" ? "Tayari una akaunti? Ingia" : "Huna akaunti? Jisajili"}
-              </button>
+              <div className="auth-mode-switch" role="group" aria-label="Aina ya akaunti" style={{ display: "flex", gap: 10, margin: "4px 0 18px" }}>
+                <button type="button" className="ap-link" aria-pressed={mode === "login"}
+                  onClick={() => { setMode("login"); setAgree(false); setPass(""); }}
+                  style={{ flex: 1, textAlign: "center", padding: "12px 8px", borderRadius: 10, border: mode === "login" ? "1px solid #ff3b47" : "1px solid #ffffff30", background: mode === "login" ? "#ff1f2d20" : "transparent", color: mode === "login" ? "#ff5963" : "#fff", fontWeight: 700 }}>
+                  Ingia
+                </button>
+                <button type="button" className="ap-link" aria-pressed={mode === "signup"}
+                  onClick={() => { setMode("signup"); setAgree(false); setPass(""); }}
+                  style={{ flex: 1, textAlign: "center", padding: "12px 8px", borderRadius: 10, border: mode === "signup" ? "1px solid #ff3b47" : "1px solid #ffffff30", background: mode === "signup" ? "#ff1f2d20" : "transparent", color: mode === "signup" ? "#ff5963" : "#fff", fontWeight: 700 }}>
+                  Jisajili
+                </button>
+              </div>
             </>
           )}
 
