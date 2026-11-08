@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Icon from "./Icon";
-import { useStore } from "../lib/store";
-import { fmtPhone, newSalt, normPhone, sha } from "../lib/utils";
+import { useStore } from "./store.jsx";
+import { fmtPhone, newSalt, normPhone, sha } from "./utils.js";
 
 // Kuingia: ukurasa kamili wa hatua 3 (namba ya simu → nenosiri → jina).
 // Akaunti zinahifadhiwa kwenye kifaa hiki tu (nenosiri limesimbwa kwa SHA-256 + salt).
