@@ -1,10 +1,11 @@
 import { useState } from "react";
 import Icon from "./Icon";
 import { useStore } from "./store.jsx";
+import { supabase } from "./supabase.js";
 import { fmtPhone, newSalt, normPhone, sha } from "./utils.js";
 
 // Kuingia: ukurasa kamili wa hatua 3 (namba ya simu → nenosiri → jina).
-// Akaunti zinahifadhiwa kwenye kifaa hiki tu (nenosiri limesimbwa kwa SHA-256 + salt).
+// Usajili mpya unatuma jina na simu Supabase; nenosiri halitumwi kwenye jedwali hili.
 export default function Auth({ onClose }) {
   const { state, update, t, notify } = useStore();
   const [step, setStep] = useState(1);
@@ -29,7 +30,7 @@ export default function Auth({ onClose }) {
     onClose();
   };
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     if (!valid || busy) return;
     if (step === 1) {
@@ -52,13 +53,28 @@ export default function Auth({ onClose }) {
         setStep(3);
       }
     } else {
+      if (!supabase) return notify("Huduma ya usajili haijaunganishwa. Jaribu tena baadaye.");
       const salt = newSalt();
       setBusy(true);
-      sha(salt + keptPass).then((hash) => {
+      try {
+        const { error } = await supabase.from("customer_signup_requests").insert({
+          phone,
+          full_name: name.trim(),
+          status: "pending",
+        });
+        if (error) {
+          if (error.code === "23505") throw new Error("Namba hii tayari imesajiliwa. Tumia namba nyingine au wasiliana na huduma kwa wateja.");
+          throw error;
+        }
+        const hash = await sha(salt + keptPass);
         const u = { id: "u" + Date.now(), name: name.trim(), contact: phone, salt, hash };
         update((s) => ({ users: [...s.users, u] }));
         loginAs(u);
-      });
+      } catch (err) {
+        notify(err?.message || "Usajili haukufanikiwa. Tafadhali jaribu tena.");
+      } finally {
+        setBusy(false);
+      }
     }
   };
 
@@ -113,7 +129,7 @@ export default function Auth({ onClose }) {
           {step === 2 && (
             <>
               <button type="button" className="ap-link" onClick={() => setStep(1)}>{t("a_change")} ({fmtPhone(phone)})</button>
-              <label className="ap-label" htmlFor="apPass">{t(exists ? "a_pass_label" : "a_pass_label")}</label>
+              <label className="ap-label" htmlFor="apPass">{t("a_pass_label")}</label>
               <div className="fieldwrap">
                 <input id="apPass" type={show ? "text" : "password"} autoFocus placeholder="••••" maxLength={60}
                   autoComplete={exists ? "current-password" : "new-password"} value={pass} onChange={(e) => setPass(e.target.value)} />
@@ -135,7 +151,7 @@ export default function Auth({ onClose }) {
           )}
 
           <button className={"ap-btn" + (valid ? " on" : "")} type="submit" disabled={!valid || busy}>
-            {btn} <Icon name="arrow" size={20} />
+            {busy ? "Inahifadhi..." : btn} <Icon name="arrow" size={20} />
           </button>
         </div>
         <p className="ap-foot">{t("a_secure")}</p>
