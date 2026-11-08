@@ -21,13 +21,11 @@ export function posterStyle(v, saver) {
 // Chips / makundi
 const RX = {
   drama: /tamthilia|thamthilia|drama/i,
-  story: /hadithi|stor/i,
+  movie: /filamu|movie/i,
+  mawaidha: /mawaidha|mahubiri|nasaha/i,
   comedy: /vichekesho|comedy/i,
-  kids: /katuni|watoto|kids|cartoon/i,
 };
 export function filterVideos(videos, filt) {
-  if (filt === "movie") return videos.filter((x) => x.type === "movie");
-  if (filt === "series") return videos.filter((x) => x.type === "series");
   if (RX[filt]) return videos.filter((x) => RX[filt].test(x.genre || ""));
   return videos;
 }
