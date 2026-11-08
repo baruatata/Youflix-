@@ -1,4 +1,5 @@
 import Icon from "./Icon";
+import NotificationCenter from "./NotificationCenter.jsx";
 import { useStore } from "./store.jsx";
 
 export default function Header({ onMenu, onSearch, onAccount, searchOpen, query, setQuery }) {
@@ -9,6 +10,7 @@ export default function Header({ onMenu, onSearch, onAccount, searchOpen, query,
         <button className="icon-btn" aria-label={t("menu")} onClick={onMenu}><Icon name="menu" /></button>
         <a className="brand" href="/" aria-label="Youflix" onClick={(e) => { e.preventDefault(); window.location.reload(); }} />
         <div className="tr">
+          {me && <NotificationCenter />}
           <button className="icon-btn" aria-label={t("search_ph")} onClick={onSearch}><Icon name="search" /></button>
           <button className="pill red" onClick={onAccount}>
             {me ? "👤 " + me.name.split(" ")[0] : t("login")}
