@@ -19,6 +19,7 @@ export default function Admin({ onClose }) {
   const [formKey, setFormKey] = useState(0);   // kusafisha fomu baada ya kuhifadhi
   const [customers, setCustomers] = useState([]);
   const [customerBusy, setCustomerBusy] = useState(false);
+  const [deletingCustomerId, setDeletingCustomerId] = useState(null);
   const [requests, setRequests] = useState([]);
   const [requestBusy, setRequestBusy] = useState(false);
   const loadCustomers = async () => {
@@ -40,6 +41,28 @@ export default function Admin({ onClose }) {
     } finally { setCustomerBusy(false); }
   };
 
+
+  const deleteCustomer = async (customer) => {
+    const label = customer.full_name || customer.phone || "mteja huyu";
+    if (!window.confirm("Una uhakika unataka kufuta akaunti ya " + label + "? Akaunti na taarifa zake za kifurushi zitaondolewa. Kitendo hiki hakiwezi kutenguliwa.")) return;
+    if (!supabase || deletingCustomerId) return;
+    setDeletingCustomerId(customer.id);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) throw new Error("Tafadhali ingia tena kama Admin.");
+      const { data, error } = await supabase.functions.invoke("phone-account-auth", {
+        body: { action: "delete_customer", customer_id: customer.id },
+        headers: { Authorization: "Bearer " + token },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setCustomers((current) => current.filter((c) => c.id !== customer.id));
+      notify("Akaunti ya mteja imefutwa.");
+    } catch (err) {
+      notify(err?.message || "Imeshindikana kufuta akaunti ya mteja.");
+    } finally { setDeletingCustomerId(null); }
+  };
 
   const loadRequests = async () => {
     if (!supabase || requestBusy) return;
@@ -396,6 +419,10 @@ export default function Admin({ onClose }) {
             <small>{c.phone || "Hakuna namba"}{c.created_at ? " • " + new Date(c.created_at).toLocaleDateString("sw-TZ") : ""}</small>
           </span>
           <small>{c.role === "customer" ? "Mteja" : c.role}</small>
+          <button className="btn ghost" type="button" disabled={!!deletingCustomerId}
+            onClick={() => deleteCustomer(c)}>
+            {deletingCustomerId === c.id ? "Inafuta..." : "Futa"}
+          </button>
         </div>
       ))}
     </>
