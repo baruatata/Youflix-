@@ -73,6 +73,21 @@ export default function Auth({ onClose }) {
         });
         if (error) throw new Error(data?.error || error.message || "Imeshindikana kuingia.");
         if (data?.error) throw new Error(data.error);
+        const { data: packageRequest, error: packageError } = await supabase
+          .from("subscription_requests")
+          .select("id")
+          .eq("submitted_by", data.user.id)
+          .limit(1)
+          .maybeSingle();
+        if (packageError) throw new Error("Imeshindikana kuhakiki usajili wa kifurushi. Jaribu tena.");
+        if (!packageRequest) {
+          setMode("signup");
+          setStep(1);
+          setPass("");
+          setAgree(false);
+          notify("Ndugu mteja, jisajili kabla ya kuingia katika mfumo. Asante.");
+          return;
+        }
         await completeLogin(data);
       } else if (step === 2) {
         setKeptPass(pass);
@@ -212,14 +227,16 @@ export default function Auth({ onClose }) {
         <div role="dialog" aria-modal="true" aria-labelledby="payment-title"
           style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(0,0,0,.88)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
           <div style={{ width: "100%", maxWidth: 440, background: "#151515", color: "#fff", border: "1px solid #ffffff25", borderRadius: 18, padding: 24, boxShadow: "0 20px 60px #000" }}>
-            <h2 id="payment-title" style={{ marginTop: 0 }}>USAJILI UMEPOKELEWA</h2>
-            <p>Kifurushi: <b>{paymentNotice.plan}</b></p>
-            <p>Kiasi: <b>TSh {paymentNotice.price.toLocaleString("en-US")}</b></p>
-            <p>Fanya malipo kupitia Mixx by Yas:</p>
-            <p style={{ fontSize: 20, fontWeight: 800, color: "#ff5963" }}>0717001506</p>
+            <h2 id="payment-title" style={{ marginTop: 0 }}>YOUFLIX – MAELEKEZO YA MALIPO</h2>
+            <p>Asante kwa kujiunga na Youflix.</p>
+            <p>Tafadhali lipia kifurushi ulichochagua kupitia:</p>
+            <p>Mtandao: <b>Mixx by Yas</b></p>
+            <p>Namba: <b style={{ fontSize: 20, color: "#ff5963" }}>0717001507</b></p>
             <p>Jina: <b>JUMAA SAIDI</b></p>
-            <p style={{ lineHeight: 1.5 }}>Baada ya kulipa, bonyeza kitufe hapa chini kutuma taarifa za muamala WhatsApp. Kifurushi kitaanza baada ya Admin kuthibitisha malipo.</p>
-            <a href={`https://wa.me/255717001506?text=${encodeURIComponent("Habari Youflix, nimelipia kifurushi.\nJina: " + paymentNotice.name + "\nNamba ya akaunti: " + paymentNotice.phone + "\nKifurushi: " + paymentNotice.plan + "\nKiasi: TSh " + paymentNotice.price.toLocaleString("en-US") + "\nTafadhali nathibitishieni malipo. Nitatuma uthibitisho wa muamala hapa.")}`}
+            <p>Kifurushi: <b>{paymentNotice.plan}</b> · Kiasi: <b>TSh {paymentNotice.price.toLocaleString("en-US")}</b></p>
+            <p style={{ lineHeight: 1.5 }}>Baada ya kufanya malipo, subiri Admin athibitishe kupokea malipo yako. Kifurushi kitaanza baada ya kuthibitishwa.</p>
+            <p style={{ lineHeight: 1.5 }}>Bonyeza kitufe hapa chini kutuma taarifa za muamala WhatsApp. Ambatanisha uthibitisho wa malipo kabla ya kutuma.</p>
+            <a href={`https://wa.me/255717001507?text=${encodeURIComponent("YOUFLIX – TAARIFA ZA MALIPO\\nJina: " + paymentNotice.name + "\\nNamba ya akaunti: " + paymentNotice.phone + "\\nKifurushi: " + paymentNotice.plan + "\\nKiasi: TSh " + paymentNotice.price.toLocaleString("en-US") + "\\nNimetuma malipo kupitia Mixx by Yas kwenda 0717001507. Tafadhali thibitisheni malipo yangu.")}`}
               target="_blank" rel="noopener noreferrer"
               style={{ display: "block", textAlign: "center", textDecoration: "none", background: "#20c767", color: "#071b10", fontWeight: 800, padding: "15px 18px", borderRadius: 12, marginTop: 20 }}>
               TUMA TAARIFA WHATSAPP
