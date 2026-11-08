@@ -10,7 +10,8 @@ const PLANS = [
 
 const money = (n) => "TSh " + Number(n).toLocaleString("en-US");
 
-export default function Join({ onLogin }) {
+export default function Join({ onLogin, mode = "join" }) {
+  const isChangeMode = mode === "change";
   const { me, state, notify } = useStore();
   const [plan, setPlan] = useState("Siku");
   const [busy, setBusy] = useState(false);
@@ -43,11 +44,12 @@ export default function Join({ onLogin }) {
           .select("id,plan,price_tzs,credit_applied_tzs,admin_notes")
           .eq("submitted_by", me.id).eq("status", "pending")
           .neq("payment_status", "paid")
-          .order("created_at", { ascending: false }).limit(1).maybeSingle();
+          .order("created_at", { ascending: false }).limit(20);
         if (error) throw error;
-        if (alive && data) {
-          setPendingRequest(data);
-          setPlan(data.plan || "Siku");
+        const matching = (data || []).find((row) => (row.admin_notes === "CHANGE_PLAN_REQUEST") === isChangeMode);
+        if (alive && matching) {
+          setPendingRequest(matching);
+          setPlan(matching.plan || "Siku");
           setSent(true);
         }
       } catch (err) {
@@ -65,11 +67,12 @@ export default function Join({ onLogin }) {
     try {
       let requestId = pendingRequest?.id;
       if (!requestId) {
-        const { data: pending, error: pendingError } = await supabase.from("subscription_requests")
+        const { data: pendingRows, error: pendingError } = await supabase.from("subscription_requests")
           .select("id,plan,price_tzs,credit_applied_tzs,admin_notes").eq("submitted_by", me.id)
           .eq("status", "pending").neq("payment_status", "paid")
-          .order("created_at", { ascending: false }).limit(1).maybeSingle();
+          .order("created_at", { ascending: false }).limit(20);
         if (pendingError) throw pendingError;
+        const pending = (pendingRows || []).find((row) => (row.admin_notes === "CHANGE_PLAN_REQUEST") === isChangeMode);
         if (pending) {
           requestId = pending.id;
           setPendingRequest(pending);
@@ -82,7 +85,7 @@ export default function Join({ onLogin }) {
         price_tzs: amountDue,
         credit_applied_tzs: creditToUse,
         submitted_by: me.id,
-        admin_notes: pendingRequest?.admin_notes || (hasActivePlan ? "CHANGE_PLAN_REQUEST" : null),
+        admin_notes: isChangeMode ? "CHANGE_PLAN_REQUEST" : null,
       };
       const result = requestId
         ? await supabase.from("subscription_requests").update(payload).eq("id", requestId)
@@ -102,10 +105,10 @@ export default function Join({ onLogin }) {
 
   return (
     <section className="set" style={{ padding: "20px 16px", maxWidth: 560, margin: "0 auto" }}>
-      <h2 className="sec">Jiunge na Youflix</h2>
-      <p className="help">{hasActivePlan
-        ? "Una kifurushi kinachoendelea. Ukichagua kingine, ombi lako litaenda kwa Admin kwa idhini; kifurushi hakitabadilika mpaka Admin akubali."
-        : "Chagua kifurushi unachotaka kutumia. Kifurushi kitaanza baada ya malipo kuthibitishwa na Admin."}</p>
+      <h2 className="sec">{isChangeMode ? "Badili Kifurushi" : "Jiunge na Youflix"}</h2>
+      <p className="help">{isChangeMode
+        ? "Chagua kifurushi kipya. Kifurushi chako cha sasa kitaendelea hadi Admin athibitishe malipo na kuidhinisha ombi."
+        : "Chagua kifurushi cha kujiunga. Kifurushi kitaanza baada ya malipo kuthibitishwa na Admin."}</p>
       {!me ? (
         <div className="toggle" style={{ marginTop: 16 }}>
           <span>Ingia kwenye akaunti yako ili kuomba kifurushi.</span>
@@ -113,6 +116,18 @@ export default function Join({ onLogin }) {
         </div>
       ) : loadingPending ? (
         <p className="help">Inapakia ombi lako...</p>
+      ) : isChangeMode && !hasActivePlan ? (
+        <div className="toggle" style={{ marginTop: 16, display: "block" }}>
+          <p className="help">Huna kifurushi kinachoendelea. Jiunge kwanza ili uweze kubadilisha kifurushi baadaye.</p>
+          <a className="btn" href="#join" style={{ display: "inline-block", textDecoration: "none" }}>Jiunge na Youflix</a>
+        </div>
+      ) : !isChangeMode && hasActivePlan ? (
+        <div className="toggle" style={{ marginTop: 16, display: "block" }}>
+          <strong>Kifurushi chako kinaendelea.</strong>
+          <p className="help">Huna haja ya kujiunga tena. Kifurushi chako cha sasa kitaendelea hadi tarehe yake ya mwisho.</p>
+          <a className="btn" href="#settings" style={{ display: "inline-block", textDecoration: "none" }}>Angalia Kifurushi Changu</a>
+          <a className="btn ghost" href="#change-package" style={{ display: "inline-block", textDecoration: "none", marginLeft: 8 }}>Badili Kifurushi</a>
+        </div>
       ) : sent ? (
         <div className="toggle" style={{ marginTop: 16, display: "block" }}>
           <strong>Ombi limepokelewa.</strong>
@@ -139,7 +154,7 @@ export default function Join({ onLogin }) {
             </a>
           </div>
           <button className="btn ghost" type="button" style={{ marginTop: 14 }} onClick={() => setSent(false)}>
-            Badili Kifurushi
+            {isChangeMode ? "Hariri Ombi" : "Angalia Ombi"}
           </button>
           <p className="help">Huduma kwa wateja: WhatsApp +255717001506.</p>
         </div>
