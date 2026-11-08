@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { T } from "./i18n";
-import { PROMOS, VIDEOS } from "../data/catalog";
+import { T } from "./i18n.js";
+import { PROMOS, VIDEOS } from "./catalog.js";
 
 // Ufunguo na umbo ni sawa na toleo la HTML, kwa hiyo data ya watumiaji wa zamani inaendelea kufanya kazi.
 const KEY = "youflix.v1";
