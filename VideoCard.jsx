@@ -1,5 +1,5 @@
-import { useStore } from "../lib/store";
-import { posterStyle } from "../lib/utils";
+import { useStore } from "./store.jsx";
+import { posterStyle } from "./utils.js";
 
 export function Card({ video, onOpen }) {
   const { state, t } = useStore();
