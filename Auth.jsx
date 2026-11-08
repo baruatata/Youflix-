@@ -23,13 +23,14 @@ export default function Auth({ onClose }) {
   const [show, setShow] = useState(false);
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [paymentNotice, setPaymentNotice] = useState(null);
 
   const valid =
     step === 1 ? !!normPhone(phoneRaw) && (mode === "login" || agree) :
     step === 2 ? pass.length >= 8 :
     name.trim().length >= 2;
 
-  const completeLogin = async (data) => {
+  const completeLogin = async (data, closeAfterLogin = true) => {
     if (!data?.session?.access_token || !data?.session?.refresh_token || !data?.user?.id) {
       throw new Error("Session ya akaunti haijapatikana. Jaribu tena.");
     }
@@ -49,7 +50,7 @@ export default function Auth({ onClose }) {
       me: u.id,
     }));
     notify(t("a_welcome") + ", " + u.name.split(" ")[0]);
-    onClose();
+    if (closeAfterLogin) onClose();
   };
 
   const submit = async (e) => {
@@ -91,22 +92,12 @@ export default function Auth({ onClose }) {
           price_tzs: chosenPlan.price,
           submitted_by: data.user.id,
         });
-        await completeLogin(data);
+        await completeLogin(data, false);
         if (requestError) {
           notify("Akaunti imetengenezwa, lakini ombi la kifurushi halikutumwa: " + requestError.message);
+          onClose();
         } else {
-          window.alert([
-            "USAJILI UMEPOKELEWA",
-            "",
-            "Kifurushi: " + chosenPlan.id,
-            "Kiasi: TSh " + chosenPlan.price.toLocaleString("en-US"),
-            "",
-            "Fanya malipo kupitia namba ya Youflix Team:",
-            "Mixx by Yas: 0717001506",
-            "Jina: JUMAA SAIDI",
-            "",
-            "Baada ya malipo, subiri Admin athibitishe. Kifurushi kitaanza baada ya uthibitisho wa malipo."
-          ].join("\n"));
+          setPaymentNotice({ name: name.trim(), phone, plan: chosenPlan.id, price: chosenPlan.price });
         }
       }
     } catch (err) {
@@ -217,6 +208,29 @@ export default function Auth({ onClose }) {
         </div>
         <p className="ap-foot">{t("a_secure")}</p>
       </form>
+      {paymentNotice && (
+        <div role="dialog" aria-modal="true" aria-labelledby="payment-title"
+          style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(0,0,0,.88)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ width: "100%", maxWidth: 440, background: "#151515", color: "#fff", border: "1px solid #ffffff25", borderRadius: 18, padding: 24, boxShadow: "0 20px 60px #000" }}>
+            <h2 id="payment-title" style={{ marginTop: 0 }}>USAJILI UMEPOKELEWA</h2>
+            <p>Kifurushi: <b>{paymentNotice.plan}</b></p>
+            <p>Kiasi: <b>TSh {paymentNotice.price.toLocaleString("en-US")}</b></p>
+            <p>Fanya malipo kupitia Mixx by Yas:</p>
+            <p style={{ fontSize: 20, fontWeight: 800, color: "#ff5963" }}>0717001506</p>
+            <p>Jina: <b>JUMAA SAIDI</b></p>
+            <p style={{ lineHeight: 1.5 }}>Baada ya kulipa, bonyeza kitufe hapa chini kutuma taarifa za muamala WhatsApp. Kifurushi kitaanza baada ya Admin kuthibitisha malipo.</p>
+            <a href={`https://wa.me/255717001506?text=${encodeURIComponent("Habari Youflix, nimelipia kifurushi.\nJina: " + paymentNotice.name + "\nNamba ya akaunti: " + paymentNotice.phone + "\nKifurushi: " + paymentNotice.plan + "\nKiasi: TSh " + paymentNotice.price.toLocaleString("en-US") + "\nTafadhali nathibitishieni malipo. Nitatuma uthibitisho wa muamala hapa.")}`}
+              target="_blank" rel="noopener noreferrer"
+              style={{ display: "block", textAlign: "center", textDecoration: "none", background: "#20c767", color: "#071b10", fontWeight: 800, padding: "15px 18px", borderRadius: 12, marginTop: 20 }}>
+              TUMA TAARIFA WHATSAPP
+            </a>
+            <button type="button" onClick={() => { setPaymentNotice(null); onClose(); }}
+              style={{ width: "100%", marginTop: 12, padding: 12, border: "1px solid #ffffff35", borderRadius: 10, background: "transparent", color: "#fff", fontWeight: 700 }}>
+              Funga
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
