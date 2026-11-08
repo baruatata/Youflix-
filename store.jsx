@@ -25,6 +25,33 @@ export const useStore = () => useContext(Ctx);
 export function StoreProvider({ children }) {
   const [state, setState] = useState(load);
 
+  // Rejesha session ya Supabase na taarifa za mteja baada ya kufungua app tena.
+  useEffect(() => {
+    if (!supabase) return;
+    let alive = true;
+    const syncUser = (user) => {
+      if (!alive || !user || user.user_metadata?.account_method !== "phone_password") return;
+      const u = {
+        id: user.id,
+        name: user.user_metadata.full_name || "Mteja",
+        contact: user.user_metadata.phone || "",
+      };
+      setState((s) => ({
+        ...s,
+        users: [...(s.users || []).filter((x) => x.id !== u.id), u],
+        me: u.id,
+      }));
+    };
+    supabase.auth.getSession().then(({ data }) => {
+      if (data?.session?.user) syncUser(data.session.user);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) syncUser(session.user);
+      else if (event === "SIGNED_OUT" && alive) setState((s) => ({ ...s, me: null }));
+    });
+    return () => { alive = false; subscription.unsubscribe(); };
+  }, []);
+
   // Pakua Hero banners zinazotumika kutoka Supabase; hifadhi data ya zamani ya kifaa.
   useEffect(() => {
     if (!supabase) return;
@@ -84,8 +111,12 @@ export function StoreProvider({ children }) {
   );
   const me = useMemo(() => state.users.find((u) => u.id === state.me) || null, [state.users, state.me]);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     if (!window.confirm(t("a_logoutq"))) return;
+    if (supabase) {
+      const { error } = await supabase.auth.signOut();
+      if (error) { notify(error.message || "Imeshindikana kutoka."); return; }
+    }
     update({ me: null });
     notify(t("a_bye"));
   }, [t, update, notify]);
