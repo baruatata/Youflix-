@@ -69,7 +69,7 @@ export default function Admin({ onClose }) {
     setRequestBusy(true);
     try {
       const { data, error } = await supabase.from("subscription_requests")
-        .select("id,full_name,phone,plan,price_tzs,status,payment_status,submitted_by,created_at")
+        .select("id,full_name,phone,plan,price_tzs,status,payment_status,submitted_by,admin_notes,created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       setRequests(Array.isArray(data) ? data : []);
@@ -86,10 +86,34 @@ export default function Admin({ onClose }) {
     const starts = new Date();
     const ends = new Date(starts);
     ends.setDate(ends.getDate() + days);
-    const { error: subError } = await supabase.from("subscriptions").insert({
-      request_id: r.id, user_id: r.submitted_by, plan: r.plan,
-      starts_at: starts.toISOString(), ends_at: ends.toISOString(), status: "active",
-    });
+    const isChangeRequest = r.admin_notes === "CHANGE_PLAN_REQUEST";
+    let subError = null;
+    if (isChangeRequest) {
+      const { data: currentSub, error: currentError } = await supabase.from("subscriptions")
+        .select("id").eq("user_id", r.submitted_by).eq("status", "active")
+        .gt("ends_at", new Date().toISOString()).order("created_at", { ascending: false })
+        .limit(1).maybeSingle();
+      if (currentError) return notify(currentError.message || "Imeshindikana kupata kifurushi cha sasa.");
+      if (currentSub) {
+        const { error } = await supabase.from("subscriptions").update({
+          request_id: r.id, plan: r.plan, starts_at: starts.toISOString(),
+          ends_at: ends.toISOString(), status: "active",
+        }).eq("id", currentSub.id);
+        subError = error;
+      } else {
+        const { error } = await supabase.from("subscriptions").insert({
+          request_id: r.id, user_id: r.submitted_by, plan: r.plan,
+          starts_at: starts.toISOString(), ends_at: ends.toISOString(), status: "active",
+        });
+        subError = error;
+      }
+    } else {
+      const { error } = await supabase.from("subscriptions").insert({
+        request_id: r.id, user_id: r.submitted_by, plan: r.plan,
+        starts_at: starts.toISOString(), ends_at: ends.toISOString(), status: "active",
+      });
+      subError = error;
+    }
     if (subError) return notify(subError.message || "Imeshindikana kuwasha kifurushi.");
     const { error: reqError } = await supabase.from("subscription_requests")
       .update({ payment_status: "paid", status: "approved" }).eq("id", r.id);
@@ -444,7 +468,7 @@ export default function Admin({ onClose }) {
         <div className="ad-row" key={r.id}>
           <span className="th" aria-hidden="true">🎟️</span>
           <span className="info">
-            <b>{r.full_name} · {r.plan}</b>
+            <b>{r.full_name} · {r.plan}</b>\n            {r.admin_notes === "CHANGE_PLAN_REQUEST" && <small>Ombi la kubadilisha kifurushi</small>}
             <small>{r.phone} · TSh {Number(r.price_tzs || 0).toLocaleString("en-US")}</small>
             <small>{r.payment_status === "paid" ? "Malipo yamethibitishwa" : "Malipo hayajathibitishwa"} · {r.status}</small>
           </span>
