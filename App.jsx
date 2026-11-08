@@ -9,9 +9,10 @@ import Toast from "./Toast.jsx";
 import { Grid } from "./VideoCard.jsx";
 import Home from "./Home.jsx";
 import Settings from "./Settings.jsx";
+import Join from "./Join.jsx";
 import { useStore } from "./store.jsx";
 
-const ROUTES = ["home", "movies", "series", "settings"];
+const ROUTES = ["home", "movies", "series", "settings", "join"];
 const readRoute = () => {
   const r = (location.hash || "#home").slice(1);
   return ROUTES.includes(r) ? r : "home";
@@ -73,6 +74,8 @@ export default function App() {
     page = (<><h2 className="sec">{t("nav_series")}</h2><Grid items={videos.filter((v) => v.type === "series")} emptyMsg={t("noseries")} onOpen={open} /></>);
   } else if (route === "settings") {
     page = <Settings onLogin={() => setAuthOpen(true)} />;
+  } else if (route === "join") {
+    page = <Join onLogin={() => setAuthOpen(true)} />;
   } else {
     page = <Home filt={filt} setFilt={setFilt} onOpen={open} />;
   }
