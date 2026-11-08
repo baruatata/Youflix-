@@ -231,12 +231,12 @@ export default function Auth({ onClose }) {
             <p>Asante kwa kujiunga na Youflix.</p>
             <p>Tafadhali lipia kifurushi ulichochagua kupitia:</p>
             <p>Mtandao: <b>Mixx by Yas</b></p>
-            <p>Namba: <b style={{ fontSize: 20, color: "#ff5963" }}>0717001507</b></p>
+            <p>Namba: <b style={{ fontSize: 20, color: "#ff5963" }}>0717001506</b></p>
             <p>Jina: <b>JUMAA SAIDI</b></p>
             <p>Kifurushi: <b>{paymentNotice.plan}</b> · Kiasi: <b>TSh {paymentNotice.price.toLocaleString("en-US")}</b></p>
             <p style={{ lineHeight: 1.5 }}>Baada ya kufanya malipo, subiri Admin athibitishe kupokea malipo yako. Kifurushi kitaanza baada ya kuthibitishwa.</p>
             <p style={{ lineHeight: 1.5 }}>Bonyeza kitufe hapa chini kutuma taarifa za muamala WhatsApp. Ambatanisha uthibitisho wa malipo kabla ya kutuma.</p>
-            <a href={`https://wa.me/255717001507?text=${encodeURIComponent("YOUFLIX – TAARIFA ZA MALIPO\\nJina: " + paymentNotice.name + "\\nNamba ya akaunti: " + paymentNotice.phone + "\\nKifurushi: " + paymentNotice.plan + "\\nKiasi: TSh " + paymentNotice.price.toLocaleString("en-US") + "\\nNimetuma malipo kupitia Mixx by Yas kwenda 0717001507. Tafadhali thibitisheni malipo yangu.")}`}
+            <a href={`https://wa.me/255717001506?text=${encodeURIComponent("YOUFLIX – TAARIFA ZA MALIPO\\nJina: " + paymentNotice.name + "\\nNamba ya akaunti: " + paymentNotice.phone + "\\nKifurushi: " + paymentNotice.plan + "\\nKiasi: TSh " + paymentNotice.price.toLocaleString("en-US") + "\\nNimetuma malipo kupitia Mixx by Yas kwenda 0717001506. Tafadhali thibitisheni malipo yangu.")}`}
               target="_blank" rel="noopener noreferrer"
               style={{ display: "block", textAlign: "center", textDecoration: "none", background: "#20c767", color: "#071b10", fontWeight: 800, padding: "15px 18px", borderRadius: 12, marginTop: 20 }}>
               TUMA TAARIFA WHATSAPP
