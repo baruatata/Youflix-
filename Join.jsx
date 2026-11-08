@@ -17,19 +17,28 @@ export default function Join({ onLogin }) {
   const [sent, setSent] = useState(false);
   const [pendingRequest, setPendingRequest] = useState(null);
   const [loadingPending, setLoadingPending] = useState(false);
+  const [creditBalance, setCreditBalance] = useState(0);
   const selected = PLANS.find((p) => p.id === plan) || PLANS[0];
+  const creditToUse = Math.min(Math.max(0, creditBalance), selected.price);
+  const amountDue = Math.max(0, selected.price - creditToUse);
   const current = state.subscription;
   const hasActivePlan = !!current && current.status === "active" &&
     Number.isFinite(Date.parse(current.ends_at)) && Date.parse(current.ends_at) > Date.now();
 
   useEffect(() => {
     let alive = true;
+    const loadCredit = async () => {
+      if (!me || !supabase) { setCreditBalance(0); return; }
+      const { data, error } = await supabase.from("youflix_credit_ledger").select("amount_tzs");
+      if (!error && alive) setCreditBalance((data || []).reduce((sum, row) => sum + Number(row.amount_tzs || 0), 0));
+    };
+    loadCredit();
     const loadPending = async () => {
       if (!me || !supabase) return;
       setLoadingPending(true);
       try {
         const { data, error } = await supabase.from("subscription_requests")
-          .select("id,plan,price_tzs,admin_notes")
+          .select("id,plan,price_tzs,credit_applied_tzs,admin_notes")
           .eq("submitted_by", me.id).eq("status", "pending")
           .neq("payment_status", "paid")
           .order("created_at", { ascending: false }).limit(1).maybeSingle();
@@ -68,7 +77,8 @@ export default function Join({ onLogin }) {
         full_name: me.name || "Mteja",
         phone: me.contact || "",
         plan: selected.id,
-        price_tzs: selected.price,
+        price_tzs: amountDue,
+        credit_applied_tzs: creditToUse,
         submitted_by: me.id,
         admin_notes: pendingRequest?.admin_notes || (hasActivePlan ? "CHANGE_PLAN_REQUEST" : null),
       };
@@ -114,11 +124,13 @@ export default function Join({ onLogin }) {
             <p>Mtandao: <b>Mixx by Yas</b></p>
             <p>Namba: <b style={{ fontSize: 20, color: "#ff5963" }}>0717001506</b></p>
             <p>Jina: <b>JUMAA SAIDI</b></p>
-            <p>Kifurushi: <b>{selected.id}</b> · Kiasi: <b>{money(selected.price)}</b></p>
+            <p>Kifurushi: <b>{selected.id}</b> · Bei: <b>{money(selected.price)}</b></p>
+            {creditToUse > 0 && <p>Youflix Credit: <b>{money(creditToUse)}</b></p>}
+            <p>Kiasi cha kulipa: <b>{money(amountDue)}</b></p>
             <p>{hasActivePlan
               ? "Baada ya kufanya malipo, tuma taarifa zake WhatsApp. Admin akithibitisha malipo na kuidhinisha ombi, kifurushi kipya kitaanza. Kifurushi chako cha sasa kitaendelea hadi hapo."
               : "Baada ya kufanya malipo, subiri Admin athibitishe kupokea malipo yako. Kifurushi kitaanza baada ya kuthibitishwa."}</p>
-            <a href={`https://wa.me/255717001506?text=${encodeURIComponent("YOUFLIX – TAARIFA ZA MALIPO\\nOmbi: " + (hasActivePlan ? "Kubadilisha kifurushi" : "Kujiunga") + "\\nKifurushi: " + selected.id + "\\nKiasi: " + money(selected.price) + "\\nNimetuma malipo kupitia Mixx by Yas kwenda 0717001506. Tafadhali thibitisheni malipo yangu.")}`}
+            <a href={`https://wa.me/255717001506?text=${encodeURIComponent("YOUFLIX – TAARIFA ZA MALIPO\\nOmbi: " + (hasActivePlan ? "Kubadilisha kifurushi" : "Kujiunga") + "\\nKifurushi: " + selected.id + "\\nBei: " + money(selected.price) + "\\nYouflix Credit: " + money(creditToUse) + "\\nKiasi cha kulipa: " + money(amountDue) + "\\nNimetuma malipo kupitia Mixx by Yas kwenda 0717001506. Tafadhali thibitisheni malipo yangu.")}`}
               target="_blank" rel="noopener noreferrer"
               style={{ display: "block", textAlign: "center", textDecoration: "none", background: "#20c767", color: "#071b10", fontWeight: 800, padding: "14px 16px", borderRadius: 10, marginTop: 16 }}>
               TUMA TAARIFA WHATSAPP
@@ -151,6 +163,12 @@ export default function Join({ onLogin }) {
           <div className="toggle" style={{ marginTop: 16 }}>
             <span>Ulichagua: <strong>{selected.id}</strong></span>
             <strong>{money(selected.price)}</strong>
+          </div>
+          {creditBalance > 0 && <div className="toggle" style={{ marginTop: 10 }}>
+            <span>Youflix Credit inayopatikana</span><strong>{money(creditBalance)}</strong>
+          </div>}
+          <div className="toggle" style={{ marginTop: 10 }}>
+            <span>Kiasi cha kulipa baada ya Credit</span><strong>{money(amountDue)}</strong>
           </div>
           <p className="help">{hasActivePlan
             ? "Ombi lako litahitaji idhini ya Admin kabla ya kifurushi kubadilika."
