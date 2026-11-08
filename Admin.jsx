@@ -123,6 +123,48 @@ export default function Admin({ onClose }) {
     loadRequests();
   };
 
+
+  const [messageBusy, setMessageBusy] = useState(false);
+  const [messageAudience, setMessageAudience] = useState("all");
+  const [messageCustomerId, setMessageCustomerId] = useState("");
+  const [messageChannel, setMessageChannel] = useState("both");
+
+  const sendAdminMessage = async (e) => {
+    e.preventDefault();
+    if (!supabase || messageBusy) return;
+    const form = new FormData(e.currentTarget);
+    const title = String(form.get("messageTitle") || "").trim();
+    const message = String(form.get("messageBody") || "").trim();
+    if (!title || !message) return notify("Weka kichwa na ujumbe kwanza.");
+    if (messageAudience === "single" && !messageCustomerId) return notify("Chagua mteja wa kumtumia ujumbe.");
+    if (!window.confirm("Unataka kutuma ujumbe huu kwa " + (messageAudience === "all" ? "wateja wote (hadi 150)" : "mteja aliyechaguliwa") + "?")) return;
+    setMessageBusy(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) throw new Error("Tafadhali ingia tena kama Admin.");
+      const { data, error } = await supabase.functions.invoke("admin-messaging", {
+        body: {
+          action: "send",
+          audience: messageAudience,
+          customer_id: messageCustomerId || undefined,
+          channel: messageChannel,
+          title,
+          message,
+        },
+        headers: { Authorization: "Bearer " + token },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      notify("Ujumbe umechakatwa. SMS zimetumwa: " + (data.sms_sent || 0) + ", zilizoshindikana: " + (data.sms_failed || 0) + ", ndani ya app: " + (data.in_app_saved || 0) + ".");
+      e.currentTarget.reset();
+    } catch (err) {
+      notify(err?.message || "Imeshindikana kutuma ujumbe.");
+    } finally {
+      setMessageBusy(false);
+    }
+  };
+
   const switchTab = (k) => { setTab(k); setEdit(null); setPoster(null); setBanner(null); setFormKey((x) => x + 1); };
 
   /* ---------- Lango (barua pepe + nenosiri) ---------- */
@@ -477,7 +519,50 @@ export default function Admin({ onClose }) {
     </>
   );
 
-  const tabs = [["videos", "ad_tab_videos"], ["customers", "Wateja"], ["requests", "Vifurushi"], ["banners", "ad_tab_banners"], ["data", "ad_tab_data"]];
+
+  const messagesTab = (
+    <>
+      <h2 className="sec">Tuma ujumbe kwa wateja</h2>
+      <p className="help" style={{ padding: "0 14px" }}>Chagua SMS, ujumbe wa ndani ya Youflix, au vyote viwili.</p>
+      <form className="form" onSubmit={sendAdminMessage}>
+        <label>Wapokeaji
+          <select value={messageAudience} onChange={(e) => setMessageAudience(e.target.value)}>
+            <option value="all">Wateja wote (hadi 150 kwa kila utumaji)</option>
+            <option value="single">Mteja mmoja</option>
+          </select>
+        </label>
+        {messageAudience === "single" && (
+          <>
+            <button className="btn ghost" type="button" onClick={loadCustomers} disabled={customerBusy}>
+              {customerBusy ? "Inapakia wateja..." : "Pakia orodha ya wateja"}
+            </button>
+            <label>Chagua mteja
+              <select value={messageCustomerId} onChange={(e) => setMessageCustomerId(e.target.value)}>
+                <option value="">Chagua mteja</option>
+                {customers.map((customer) => (
+                  <option key={customer.id} value={customer.id}>{customer.full_name || "Mteja"} · {customer.phone || "Hakuna namba"}</option>
+                ))}
+              </select>
+            </label>
+          </>
+        )}
+        <label>Njia ya kutuma
+          <select value={messageChannel} onChange={(e) => setMessageChannel(e.target.value)}>
+            <option value="both">SMS + ujumbe ndani ya Youflix</option>
+            <option value="sms">SMS kupitia Kilakona pekee</option>
+            <option value="in_app">Ujumbe ndani ya Youflix pekee</option>
+          </select>
+        </label>
+        <label>Kichwa cha ujumbe<input name="messageTitle" maxLength={100} required placeholder="Mfano: Filamu mpya" /></label>
+        <label>Ujumbe<textarea name="messageBody" rows={4} maxLength={1000} required placeholder="Andika taarifa unayotaka wateja waipokee." /></label>
+        <button className="btn" type="submit" disabled={messageBusy}>
+          {messageBusy ? "Inatuma..." : "Tuma ujumbe"}
+        </button>
+      </form>
+    </>
+  );
+
+  const tabs = [["videos", "ad_tab_videos"], ["customers", "Wateja"], ["requests", "Vifurushi"], ["messages", "Ujumbe"], ["banners", "ad_tab_banners"], ["data", "ad_tab_data"]];
   return (
     <div id="admin" className="modal">
       <div className="ad">
@@ -488,7 +573,7 @@ export default function Admin({ onClose }) {
         <div className="ad-tabs">
           {tabs.map(([k, label]) => <button key={k} className={"chip" + (tab === k ? " on" : "")} onClick={() => switchTab(k)}>{t(label)}</button>)}
         </div>
-        {tab === "videos" ? videosTab : tab === "customers" ? customersTab : tab === "requests" ? requestsTab : tab === "banners" ? bannersTab : dataTab}
+        {tab === "videos" ? videosTab : tab === "customers" ? customersTab : tab === "requests" ? requestsTab : tab === "messages" ? messagesTab : tab === "banners" ? bannersTab : dataTab}
       </div>
     </div>
   );
