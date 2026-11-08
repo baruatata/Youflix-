@@ -28,7 +28,8 @@ export default function Auth({ onClose }) {
   const valid =
     step === 1 ? !!normPhone(phoneRaw) && (mode === "login" || agree) :
     step === 2 ? pass.length >= 8 :
-    name.trim().length >= 2;
+    step === 3 ? name.trim().length >= 2 :
+    !!signupPlan;
 
   const completeLogin = async (data, closeAfterLogin = true) => {
     if (!data?.session?.access_token || !data?.session?.refresh_token || !data?.user?.id) {
@@ -105,6 +106,8 @@ export default function Auth({ onClose }) {
         setKeptPass(pass);
         setPass("");
         setStep(3);
+      } else if (step === 3) {
+        setStep(4);
       } else {
         const { data, error } = await supabase.functions.invoke("phone-account-auth", {
           body: { action: "signup", phone, password: keptPass, full_name: name.trim() },
@@ -135,9 +138,9 @@ export default function Auth({ onClose }) {
   };
 
   const c = (k) => (step === k ? "on" : step > k ? "done" : "");
-  const title = step === 1 ? t("a_wb") : step === 2 ? t(mode === "login" ? "a_pass_title_login" : "a_new_title") : t("a_name_title");
-  const sub = step === 1 ? t("a_wb_sub") : step === 2 ? t(mode === "login" ? "a_pass_sub_login" : "a_new_sub") : t("a_name_sub");
-  const btn = step === 1 ? t("a_continue") : step === 2 ? t(mode === "login" ? "login" : "a_continue") : t("a_finish");
+  const title = step === 1 ? t("a_wb") : step === 2 ? t(mode === "login" ? "a_pass_title_login" : "a_new_title") : step === 3 ? t("a_name_title") : "Chagua kifurushi";
+  const sub = step === 1 ? t("a_wb_sub") : step === 2 ? t(mode === "login" ? "a_pass_sub_login" : "a_new_sub") : step === 3 ? t("a_name_sub") : "Chagua kifurushi unachotaka kujiunga nacho.";
+  const btn = step === 1 ? t("a_continue") : step === 2 ? t(mode === "login" ? "login" : "a_continue") : step === 3 ? t("a_continue") : t("a_finish");
 
   return (
     <div id="auth" className="modal">
@@ -159,7 +162,7 @@ export default function Auth({ onClose }) {
           <div className="steps">
             <b className={c(1)}>{step > 1 ? <Icon name="check" size={18} /> : "1"}</b><i />
             <b className={c(2)}>{step > 2 ? <Icon name="check" size={18} /> : "2"}</b><i />
-            <b className={c(3)}>3</b>
+            <b className={c(3)}>{step > 3 ? <Icon name="check" size={18} /> : "3"}</b><i /><b className={c(4)}>4</b>
           </div>
           <h2>{title}</h2>
           <p className="sub">{sub}</p>
@@ -216,6 +219,12 @@ export default function Auth({ onClose }) {
                 <input id="apName" type="text" autoFocus autoComplete="name" maxLength={60} value={name}
                   onChange={(e) => setName(e.target.value)} />
               </div>
+              <p className="help">Jaza jina lako kamili kisha endelea kuchagua kifurushi.</p>
+            </>
+          )}
+
+          {step === 4 && (
+            <>
               <label className="ap-label" htmlFor="signupPlan">Chagua kifurushi</label>
               <select id="signupPlan" value={signupPlan} onChange={(e) => setSignupPlan(e.target.value)}
                 style={{ width: "100%", minHeight: 48, marginTop: 8, padding: "10px 12px", borderRadius: 10 }}>
