@@ -41,8 +41,11 @@ export default function Drawer({ open, onClose, route, filt, onCategory, onSearc
           <p className="dr-h">{t("categories")}</p>
           {CATS.map(([k, icon, label]) => cat(k, icon, t(label)))}
           <div className="dr-sep" />
+          <a href="#join" className={route === "join" ? "on" : ""} onClick={onClose}>
+            <Icon name="package" /><span>Kujiunga</span>
+          </a>
           <a href="#settings" className={route === "settings" ? "on" : ""} onClick={onClose}>
-            <Icon name="package" /><span>Hali ya kifurushi</span>
+            <Icon name="user" /><span>Hali ya kifurushi</span>
           </a>
           <a href="#" onClick={(e) => { e.preventDefault(); onClose(); me ? logout() : onLogin(); }}>
             <Icon name="user" /><span>{me ? me.name + " · " + t("a_logout") : t("login")}</span>
