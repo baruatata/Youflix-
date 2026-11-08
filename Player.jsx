@@ -13,9 +13,8 @@ export default function Player({ video, onClose }) {
   const last = useRef(0);
   const yt = ytId(videoSrc);
   const activePackage = !!state.me && state.subscription?.status === "active" && new Date(state.subscription.starts_at).getTime() <= Date.now() && new Date(state.subscription.ends_at).getTime() > Date.now();
-  // Cloudflare Stream video UID (si URL kamili) huchezwa kupitia iframe ya Stream.
   const streamId = !yt && /^[a-zA-Z0-9_-]{30,80}$/.test(String(videoSrc || "").trim())
-    ? String(video.src).trim() : null;
+    ? String(videoSrc).trim() : null;
 
   useEffect(() => () => {
     const v = el.current;
@@ -43,8 +42,21 @@ export default function Player({ video, onClose }) {
     try {
       const { data, error } = await supabase.from("media").select("video_url").eq("id", video.id).single();
       if (error) throw error;
-      if (!data?.video_url) throw new Error("Video haijapatikana.");
-      setVideoSrc(data.video_url);
+      const stored = String(data?.video_url || "").trim();
+      if (!stored) throw new Error("Video haijapatikana.");
+
+      // Mux Signed Playback IDs hazina URL ya moja kwa moja; token hutolewa server-side.
+      if (!/^https?:\/\//i.test(stored) && !ytId(stored)) {
+        const { data: signed, error: tokenError } = await supabase.functions.invoke("mux-admin", {
+          body: { action: "get-playback-token", playback_id: stored },
+        });
+        if (tokenError) throw new Error(signed?.error || tokenError.message || "Imeshindikana kupata ruhusa ya video.");
+        if (!signed?.playback_token) throw new Error(signed?.error || "Mux haijatoa token ya video.");
+        setVideoSrc("https://stream.mux.com/" + encodeURIComponent(stored) + ".m3u8?token=" + encodeURIComponent(signed.playback_token));
+      } else {
+        // Viungo vya zamani vya public vinaendelea kufanya kazi wakati wa uhamishaji.
+        setVideoSrc(stored);
+      }
       setStarted(true);
     } catch (err) {
       setLocked(true);
@@ -54,24 +66,13 @@ export default function Player({ video, onClose }) {
   let stage;
   if (locked || !activePackage) stage = <div className="empty"><p>Video hii inahitaji kifurushi hai kilicholipiwa na kuthibitishwa na Admin.</p><button className="btn" onClick={() => { onClose(); location.hash = "#join"; }}>Jiunge na kifurushi</button></div>;
   else if (!started) stage = <button className="big" aria-label={t("play")} disabled={loading} onClick={beginPlayback}>{loading ? "..." : "▶"}</button>;
-  else if (yt) stage = <iframe title={video.title} allow="autoplay; fullscreen; encrypted-media" allowFullScreen
-    src={`https://www.youtube-nocookie.com/embed/${yt}?autoplay=1&rel=0`} />;
-  else if (streamId) stage = <iframe title={video.title} allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen
-    src={`https://iframe.videodelivery.net/${streamId}`} />;
-  else stage = <video ref={(v) => { if (v) el.current = v; }} src={videoSrc} controls autoPlay playsInline preload="none"
-    onLoadedMetadata={onMeta} onTimeUpdate={onTime} onError={() => notify(t("videoerr"))} />;
+  else if (yt) stage = <iframe title={video.title} allow="autoplay; fullscreen; encrypted-media" allowFullScreen src={`https://www.youtube-nocookie.com/embed/${yt}?autoplay=1&rel=0`} />;
+  else if (streamId) stage = <video ref={(v) => { if (v) el.current = v; }} src={videoSrc} controls autoPlay playsInline preload="none" onLoadedMetadata={onMeta} onTimeUpdate={onTime} onError={() => notify(t("videoerr"))} />;
+  else stage = <video ref={(v) => { if (v) el.current = v; }} src={videoSrc} controls autoPlay playsInline preload="none" onLoadedMetadata={onMeta} onTimeUpdate={onTime} onError={() => notify(t("videoerr"))} />;
 
-  return (
-    <div id="player" className="player">
-      <div className="player-box">
-        <button className="close" aria-label={t("close")} onClick={onClose}>✕</button>
-        <div className="stage">{stage}</div>
-        <div className="player-info">
-          <h2>{video.title}</h2>
-          <p className="meta">{meta}</p>
-          <p>{video.desc || ""}</p>
-        </div>
-      </div>
-    </div>
-  );
+  return <div id="player" className="player"><div className="player-box">
+    <button className="close" aria-label={t("close")} onClick={onClose}>✕</button>
+    <div className="stage">{stage}</div>
+    <div className="player-info"><h2>{video.title}</h2><p className="meta">{meta}</p><p>{video.desc || ""}</p></div>
+  </div></div>;
 }
