@@ -7,7 +7,7 @@ import { fmtPhone, normPhone } from "./utils.js";
 export default function Auth({ onClose }) {
   const { state, update, t, notify } = useStore();
   const [step, setStep] = useState(1);
-  const [mode, setMode] = useState("signup");
+  const [mode, setMode] = useState("login");
   const [phoneRaw, setPhoneRaw] = useState("");
   const [phone, setPhone] = useState("");
   const [pass, setPass] = useState("");
@@ -18,7 +18,7 @@ export default function Auth({ onClose }) {
   const [busy, setBusy] = useState(false);
 
   const valid =
-    step === 1 ? !!normPhone(phoneRaw) && agree :
+    step === 1 ? !!normPhone(phoneRaw) && (mode === "login" || agree) :
     step === 2 ? pass.length >= 8 :
     name.trim().length >= 2;
 
@@ -125,12 +125,14 @@ export default function Auth({ onClose }) {
                   maxLength={14} value={phoneRaw} onChange={(e) => setPhoneRaw(e.target.value)} />
               </div>
               <p className="help">{t("a_phone_help")}</p>
-              <label className="agree">
-                <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
-                <span className="bx"><Icon name="check" size={18} /></span>
-                <span>{t("a_terms_pre")}<em>{t("a_terms")}</em>{t("a_and")}<em>{t("a_privacy")}</em></span>
-              </label>
-              <button type="button" className="ap-link" onClick={() => setMode((m) => m === "signup" ? "login" : "signup")}>
+              {mode === "signup" && (
+                <label className="agree">
+                  <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
+                  <span className="bx"><Icon name="check" size={18} /></span>
+                  <span>{t("a_terms_pre")}<em>{t("a_terms")}</em>{t("a_and")}<em>{t("a_privacy")}</em></span>
+                </label>
+              )}
+              <button type="button" className="ap-link" onClick={() => { setMode((m) => m === "signup" ? "login" : "signup"); setAgree(false); setPass(""); }}>
                 {mode === "signup" ? "Tayari una akaunti? Ingia" : "Huna akaunti? Jisajili"}
               </button>
             </>

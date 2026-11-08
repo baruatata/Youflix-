@@ -8,6 +8,9 @@ export default function Player({ video, onClose }) {
   const el = useRef(null);
   const last = useRef(0);
   const yt = ytId(video.src);
+  // Cloudflare Stream video UID (si URL kamili) huchezwa kupitia iframe ya Stream.
+  const streamId = !yt && /^[a-zA-Z0-9_-]{30,80}$/.test(String(video.src || "").trim())
+    ? String(video.src).trim() : null;
 
   useEffect(() => () => {
     const v = el.current;
@@ -33,6 +36,8 @@ export default function Player({ video, onClose }) {
   else if (!started) stage = <button className="big" aria-label={t("play")} onClick={() => setStarted(true)}>▶</button>;
   else if (yt) stage = <iframe title={video.title} allow="autoplay; fullscreen; encrypted-media" allowFullScreen
     src={`https://www.youtube-nocookie.com/embed/${yt}?autoplay=1&rel=0`} />;
+  else if (streamId) stage = <iframe title={video.title} allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen
+    src={`https://iframe.videodelivery.net/${streamId}`} />;
   else stage = <video ref={(v) => { if (v) el.current = v; }} src={video.src} controls autoPlay playsInline preload="none"
     onLoadedMetadata={onMeta} onTimeUpdate={onTime} onError={() => notify(t("videoerr"))} />;
 
