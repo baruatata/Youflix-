@@ -1,5 +1,5 @@
 import Icon from "./Icon";
-import { useStore } from "../lib/store";
+import { useStore } from "./store.jsx";
 
 export default function Footer({ onAdmin }) {
   const { t } = useStore();
