@@ -95,7 +95,18 @@ export default function Auth({ onClose }) {
         if (requestError) {
           notify("Akaunti imetengenezwa, lakini ombi la kifurushi halikutumwa: " + requestError.message);
         } else {
-          notify("Usajili umekamilika. Ombi la kifurushi cha " + chosenPlan.id + " limetumwa kwa Admin.");
+          window.alert([
+            "USAJILI UMEPOKELEWA",
+            "",
+            "Kifurushi: " + chosenPlan.id,
+            "Kiasi: TSh " + chosenPlan.price.toLocaleString("en-US"),
+            "",
+            "Fanya malipo kupitia namba ya Youflix Team:",
+            "Mixx by Yas: 0717001507",
+            "Jina: JUMAA SAIDI",
+            "",
+            "Baada ya malipo, subiri Admin athibitishe. Kifurushi kitaanza baada ya uthibitisho wa malipo."
+          ].join("\n"));
         }
       }
     } catch (err) {
