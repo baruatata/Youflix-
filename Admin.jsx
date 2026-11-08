@@ -132,7 +132,8 @@ export default function Admin({ onClose }) {
   const sendAdminMessage = async (e) => {
     e.preventDefault();
     if (!supabase || messageBusy) return;
-    const form = new FormData(e.currentTarget);
+    const formElement = e.currentTarget;
+    const form = new FormData(formElement);
     const title = String(form.get("messageTitle") || "").trim();
     const message = String(form.get("messageBody") || "").trim();
     if (!title || !message) return notify("Weka kichwa na ujumbe kwanza.");
@@ -157,7 +158,7 @@ export default function Admin({ onClose }) {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       notify("Ujumbe umechakatwa. SMS zimetumwa: " + (data.sms_sent || 0) + ", zilizoshindikana: " + (data.sms_failed || 0) + ", ndani ya app: " + (data.in_app_saved || 0) + ".");
-      e.currentTarget.reset();
+      formElement.reset();
     } catch (err) {
       notify(err?.message || "Imeshindikana kutuma ujumbe.");
     } finally {
