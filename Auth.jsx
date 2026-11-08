@@ -71,7 +71,19 @@ export default function Auth({ onClose }) {
         const { data, error } = await supabase.functions.invoke("phone-account-auth", {
           body: { action: "login", phone, password: pass },
         });
-        if (error) throw new Error(data?.error || error.message || "Imeshindikana kuingia.");
+        if (error) {
+          let serverMessage = "";
+          try { serverMessage = (await error.context?.json())?.error || ""; } catch {}
+          throw new Error(serverMessage || data?.error || error.message || "Imeshindikana kuingia.");
+        }
+        if (data?.requires_signup) {
+          setMode("signup");
+          setStep(1);
+          setPass("");
+          setAgree(false);
+          notify(data.message || "Ndugu mteja, jisajili kabla ya kuingia katika mfumo. Asante.");
+          return;
+        }
         if (data?.error) throw new Error(data.error);
         const { data: packageRequest, error: packageError } = await supabase
           .from("subscription_requests")
