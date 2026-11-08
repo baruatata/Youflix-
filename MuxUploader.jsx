@@ -8,7 +8,6 @@ export default function MuxUploader({ notify, onSaved }) {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState("");
   const [title, setTitle] = useState("");
-  const [type, setType] = useState("movie");
   const [genre, setGenre] = useState("Tamthilia");
   const [year, setYear] = useState(String(new Date().getFullYear()));
   const [description, setDescription] = useState("");
@@ -79,7 +78,7 @@ export default function MuxUploader({ notify, onSaved }) {
         title: title.trim(),
         video_url: result.playbackUrl,
         poster_url: posterUrl,
-        category: type === "series" ? "Mfululizo" : "Filamu",
+        category: genre === "Tamthilia" ? "Mfululizo" : "Filamu",
         genre,
         release_year: Number(year) || new Date().getFullYear(),
         duration: result.duration ? Math.round(result.duration / 60) + " min" : "",
@@ -106,8 +105,7 @@ export default function MuxUploader({ notify, onSaved }) {
       <p className="help">Chagua video kwenye iPhone yako. Video itatumwa moja kwa moja Mux bila kupitia hifadhi ya simu ya Youflix.</p>
       <form onSubmit={upload}>
         <label>Jina la video<input value={title} onChange={(e) => setTitle(e.target.value)} required maxLength={80} /></label>
-        <label>Muundo wa video<select value={type} onChange={(e) => setType(e.target.value)}><option value="movie">Filamu</option><option value="series">Mfululizo</option></select></label>
-        <label>Aina ya video<select value={genre} onChange={(e) => setGenre(e.target.value)}>{GENRES.map((g) => <option key={g} value={g}>{g}</option>)}</select></label>
+                <label>Aina ya video<select value={genre} onChange={(e) => setGenre(e.target.value)}>{GENRES.map((g) => <option key={g} value={g}>{g}</option>)}</select></label>
         <label>Mwaka<input type="number" min="1900" max="2100" value={year} onChange={(e) => setYear(e.target.value)} /></label>
         <label>Maelezo<input value={description} onChange={(e) => setDescription(e.target.value)} maxLength={300} /></label>
         <label>Chagua cover / poster ya video<input name="cover" type="file" accept="image/*" required disabled={busy} onChange={(e) => setCoverFile(e.target.files?.[0] || null)} /></label>
