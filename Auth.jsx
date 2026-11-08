@@ -102,7 +102,7 @@ export default function Auth({ onClose }) {
             "Kiasi: TSh " + chosenPlan.price.toLocaleString("en-US"),
             "",
             "Fanya malipo kupitia namba ya Youflix Team:",
-            "Mixx by Yas: 0717001507",
+            "Mixx by Yas: 0717001506",
             "Jina: JUMAA SAIDI",
             "",
             "Baada ya malipo, subiri Admin athibitishe. Kifurushi kitaanza baada ya uthibitisho wa malipo."
