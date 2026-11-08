@@ -6,7 +6,7 @@ import { download, newSalt, okImg, posterStyle, readImage, sha } from "./utils.j
 
 // Barua pepe ya admin haiko wazi kwenye msimbo — kuna alama yake iliyosimbwa (SHA-256) tu.
 // Ili kubadilisha admin: sha256("barua@pepe.com" kwa herufi ndogo) na uiweke hapa (pamoja na toleo mbadala la "f..." kwa vivinjari visivyo na crypto.subtle).
-const GENRES = ["Thamthilia", "Hadithi", "Vichekesho", "Matukio", "Bongo", "Muziki"];
+const GENRES = ["Tamthilia", "Filamu", "Hadithi", "Vichekesho"];
 
 export default function Admin({ onClose }) {
   const { state, update, t, notify, videos, promos } = useStore();
