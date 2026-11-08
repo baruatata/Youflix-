@@ -200,7 +200,7 @@ export default function Admin({ onClose }) {
       }
     }
     const rec = {
-      title: o.title, video_url: o.src || "", category: o.type === "series" ? "series" : "movie",
+      title: o.title, video_url: o.src || "", category: o.type === "series" ? "Mfululizo" : "Filamu",
       genre: o.genre || "", release_year: parseInt(o.year, 10) || new Date().getFullYear(),
       duration: o.dur || "", description: o.desc || "", poster_url: img || null, published: true,
     };
