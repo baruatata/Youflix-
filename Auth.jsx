@@ -2,30 +2,45 @@ import { useState } from "react";
 import Icon from "./Icon";
 import { useStore } from "./store.jsx";
 import { supabase } from "./supabase.js";
-import { fmtPhone, newSalt, normPhone, sha } from "./utils.js";
+import { fmtPhone, normPhone } from "./utils.js";
 
-// Kuingia: ukurasa kamili wa hatua 3 (namba ya simu → nenosiri → jina).
-// Usajili mpya unatuma jina na simu Supabase; nenosiri halitumwi kwenye jedwali hili.
 export default function Auth({ onClose }) {
   const { state, update, t, notify } = useStore();
   const [step, setStep] = useState(1);
+  const [mode, setMode] = useState("signup");
   const [phoneRaw, setPhoneRaw] = useState("");
-  const [agree, setAgree] = useState(false);
   const [phone, setPhone] = useState("");
-  const [exists, setExists] = useState(false);
   const [pass, setPass] = useState("");
   const [keptPass, setKeptPass] = useState("");
   const [name, setName] = useState("");
   const [show, setShow] = useState(false);
+  const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const valid =
     step === 1 ? !!normPhone(phoneRaw) && agree :
-    step === 2 ? pass.length >= (exists ? 1 : 4) :
+    step === 2 ? pass.length >= 8 :
     name.trim().length >= 2;
 
-  const loginAs = (u) => {
-    update({ me: u.id });
+  const completeLogin = async (data) => {
+    if (!data?.session?.access_token || !data?.session?.refresh_token || !data?.user?.id) {
+      throw new Error("Session ya akaunti haijapatikana. Jaribu tena.");
+    }
+    const { error: sessionError } = await supabase.auth.setSession({
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+    });
+    if (sessionError) throw sessionError;
+
+    const u = {
+      id: data.user.id,
+      name: data.user.name || "Mteja",
+      contact: String(data.user.phone || phone),
+    };
+    update((s) => ({
+      users: [...(s.users || []).filter((x) => x.id !== u.id), u],
+      me: u.id,
+    }));
     notify(t("a_welcome") + ", " + u.name.split(" ")[0]);
     onClose();
   };
@@ -36,52 +51,44 @@ export default function Auth({ onClose }) {
     if (step === 1) {
       const ph = normPhone(phoneRaw);
       setPhone(ph);
-      setExists(state.users.some((u) => u.contact === ph));
       setPass("");
       setStep(2);
-    } else if (step === 2) {
-      if (exists) {
-        const user = state.users.find((u) => u.contact === phone);
-        setBusy(true);
-        sha(user.salt + pass).then((hash) => {
-          setBusy(false);
-          if (hash !== user.hash) { notify(t("a_bad")); setPass(""); return; }
-          loginAs(user);
+      return;
+    }
+
+    if (!supabase) return notify("Huduma ya akaunti haijaunganishwa. Jaribu tena baadaye.");
+    setBusy(true);
+    try {
+      if (step === 2 && mode === "login") {
+        const { data, error } = await supabase.functions.invoke("phone-account-auth", {
+          body: { action: "login", phone, password: pass },
         });
-      } else {
+        if (error) throw new Error(data?.error || error.message || "Imeshindikana kuingia.");
+        if (data?.error) throw new Error(data.error);
+        await completeLogin(data);
+      } else if (step === 2) {
         setKeptPass(pass);
+        setPass("");
         setStep(3);
-      }
-    } else {
-      if (!supabase) return notify("Huduma ya usajili haijaunganishwa. Jaribu tena baadaye.");
-      const salt = newSalt();
-      setBusy(true);
-      try {
-        const { error } = await supabase.from("customer_signup_requests").insert({
-          phone,
-          full_name: name.trim(),
-          status: "pending",
+      } else {
+        const { data, error } = await supabase.functions.invoke("phone-account-auth", {
+          body: { action: "signup", phone, password: keptPass, full_name: name.trim() },
         });
-        if (error) {
-          if (error.code === "23505") throw new Error("Namba hii tayari imesajiliwa. Tumia namba nyingine au wasiliana na huduma kwa wateja.");
-          throw error;
-        }
-        const hash = await sha(salt + keptPass);
-        const u = { id: "u" + Date.now(), name: name.trim(), contact: phone, salt, hash };
-        update((s) => ({ users: [...s.users, u] }));
-        loginAs(u);
-      } catch (err) {
-        notify(err?.message || "Usajili haukufanikiwa. Tafadhali jaribu tena.");
-      } finally {
-        setBusy(false);
+        if (error) throw new Error(data?.error || error.message || "Usajili haukufanikiwa.");
+        if (data?.error) throw new Error(data.error);
+        await completeLogin(data);
       }
+    } catch (err) {
+      notify(err?.message || "Imeshindikana. Tafadhali jaribu tena.");
+    } finally {
+      setBusy(false);
     }
   };
 
   const c = (k) => (step === k ? "on" : step > k ? "done" : "");
-  const title = step === 1 ? t("a_wb") : step === 2 ? t(exists ? "a_pass_title_login" : "a_new_title") : t("a_name_title");
-  const sub = step === 1 ? t("a_wb_sub") : step === 2 ? t(exists ? "a_pass_sub_login" : "a_new_sub") : t("a_name_sub");
-  const btn = step === 1 ? t("a_continue") : step === 2 ? t(exists ? "login" : "a_continue") : t("a_finish");
+  const title = step === 1 ? t("a_wb") : step === 2 ? t(mode === "login" ? "a_pass_title_login" : "a_new_title") : t("a_name_title");
+  const sub = step === 1 ? t("a_wb_sub") : step === 2 ? t(mode === "login" ? "a_pass_sub_login" : "a_new_sub") : t("a_name_sub");
+  const btn = step === 1 ? t("a_continue") : step === 2 ? t(mode === "login" ? "login" : "a_continue") : t("a_finish");
 
   return (
     <div id="auth" className="modal">
@@ -123,6 +130,9 @@ export default function Auth({ onClose }) {
                 <span className="bx"><Icon name="check" size={18} /></span>
                 <span>{t("a_terms_pre")}<em>{t("a_terms")}</em>{t("a_and")}<em>{t("a_privacy")}</em></span>
               </label>
+              <button type="button" className="ap-link" onClick={() => setMode((m) => m === "signup" ? "login" : "signup")}>
+                {mode === "signup" ? "Tayari una akaunti? Ingia" : "Huna akaunti? Jisajili"}
+              </button>
             </>
           )}
 
@@ -131,11 +141,11 @@ export default function Auth({ onClose }) {
               <button type="button" className="ap-link" onClick={() => setStep(1)}>{t("a_change")} ({fmtPhone(phone)})</button>
               <label className="ap-label" htmlFor="apPass">{t("a_pass_label")}</label>
               <div className="fieldwrap">
-                <input id="apPass" type={show ? "text" : "password"} autoFocus placeholder="••••" maxLength={60}
-                  autoComplete={exists ? "current-password" : "new-password"} value={pass} onChange={(e) => setPass(e.target.value)} />
+                <input id="apPass" type={show ? "text" : "password"} autoFocus placeholder="••••••••" maxLength={72}
+                  autoComplete={mode === "login" ? "current-password" : "new-password"} value={pass} onChange={(e) => setPass(e.target.value)} />
                 <button type="button" className="eye" onClick={() => setShow((x) => !x)}>{t(show ? "a_hide" : "a_show")}</button>
               </div>
-              <p className="help" />
+              <p className="help">Nenosiri liwe na angalau herufi 8.</p>
             </>
           )}
 
@@ -143,7 +153,7 @@ export default function Auth({ onClose }) {
             <>
               <label className="ap-label" htmlFor="apName">{t("a_name_label")}</label>
               <div className="fieldwrap">
-                <input id="apName" type="text" autoFocus autoComplete="name" maxLength={40} value={name}
+                <input id="apName" type="text" autoFocus autoComplete="name" maxLength={60} value={name}
                   onChange={(e) => setName(e.target.value)} />
               </div>
               <p className="help" />
@@ -151,7 +161,7 @@ export default function Auth({ onClose }) {
           )}
 
           <button className={"ap-btn" + (valid ? " on" : "")} type="submit" disabled={!valid || busy}>
-            {busy ? "Inahifadhi..." : btn} <Icon name="arrow" size={20} />
+            {busy ? "Inahakiki..." : btn} <Icon name="arrow" size={20} />
           </button>
         </div>
         <p className="ap-foot">{t("a_secure")}</p>
