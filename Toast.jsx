@@ -1,4 +1,4 @@
-import { useStore } from "../lib/store";
+import { useStore } from "./store.jsx";
 
 export default function Toast() {
   const { toast } = useStore();
