@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Icon from "./Icon";
-import { useStore } from "../lib/store";
+import { useStore } from "./store.jsx";
 
 const CATS = [
   ["drama", "drama", "c_drama"],
