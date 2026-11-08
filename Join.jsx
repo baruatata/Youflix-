@@ -99,7 +99,9 @@ export default function Join({ onLogin }) {
           <span>Ingia kwenye akaunti yako ili kuomba kifurushi.</span>
           <button className="btn" onClick={onLogin}>Ingia</button>
         </div>
-      ) : loadingPending ? (\n        <p className="help">Inapakia ombi lako...</p>\n      ) : sent ? (
+      ) : loadingPending ? (
+        <p className="help">Inapakia ombi lako...</p>
+      ) : sent ? (
         <div className="toggle" style={{ marginTop: 16, display: "block" }}>
           <strong>Ombi limepokelewa.</strong>
           <p className="help">{hasActivePlan
