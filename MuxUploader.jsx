@@ -29,7 +29,8 @@ export default function MuxUploader({ notify, onSaved }) {
 
   const upload = async (event) => {
     event.preventDefault();
-    const file = event.currentTarget.elements.video.files?.[0];
+    const form = event.currentTarget;
+    const file = form.elements.video.files?.[0];
     if (!file) return notify("Chagua video kutoka kwenye simu yako.");
     if (!title.trim()) return notify("Weka jina la video.");
     if (!supabase) return notify("Supabase haijaunganishwa.");
@@ -73,7 +74,7 @@ export default function MuxUploader({ notify, onSaved }) {
       setStatus("Video imehifadhiwa na iko tayari kutazamwa.");
       notify("Video imepakiwa Mux na kuhifadhiwa Youflix.");
       setTitle(""); setDescription(""); setProgress(0);
-      event.currentTarget.reset();
+      form.reset();
       onSaved?.();
     } catch (error) {
       notify(error?.message || "Imeshindikana kupakia video.");
