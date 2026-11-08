@@ -6,8 +6,8 @@
 const B = import.meta.env.BASE_URL;
 
 export const PROMOS = [
-  { id: "p0", img: `${B}img/vazi.jpg`, alt: "Vazi la Stara — 28 Dec. on Youflix" },
-  { id: "p1", img: `${B}img/ayesha.jpg`, alt: "Ayesha Juice Point — Mango Juice" },
+  { id: "p0", img: `${B}vazi.jpg`, alt: "Vazi la Stara — 28 Dec. on Youflix" },
+  { id: "p1", img: `${B}ayesha.jpg`, alt: "Ayesha Juice Point — Mango Juice" },
 ];
 
 export const VIDEOS = [];
