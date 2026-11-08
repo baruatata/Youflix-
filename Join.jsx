@@ -61,28 +61,26 @@ export default function Join({ onLogin }) {
       ) : sent ? (
         <div className="toggle" style={{ marginTop: 16, display: "block" }}>
           <strong>Ombi limepokelewa.</strong>
-          {hasActivePlan ? (
-            <p className="help">Admin atakagua ombi lako la kubadilisha kifurushi. Kifurushi chako cha sasa kitaendelea mpaka ombi liidhinishwe.</p>
-          ) : (
-            <>
-              <p className="help">Admin atathibitisha malipo kabla kifurushi chako hakijaanza.</p>
-              <div style={{ marginTop: 18, padding: 16, border: "1px solid #ffffff30", borderRadius: 12, background: "#151515", color: "#fff" }}>
-                <h3 style={{ marginTop: 0 }}>YOUFLIX – MAELEKEZO YA MALIPO</h3>
-                <p>Asante kwa kujiunga na Youflix.</p>
-                <p>Tafadhali lipia kifurushi ulichochagua kupitia:</p>
-                <p>Mtandao: <b>Mixx by Yas</b></p>
-                <p>Namba: <b style={{ fontSize: 20, color: "#ff5963" }}>0717001506</b></p>
-                <p>Jina: <b>JUMAA SAIDI</b></p>
-                <p>Kifurushi: <b>{selected.id}</b> · Kiasi: <b>{money(selected.price)}</b></p>
-                <p>Baada ya kufanya malipo, subiri Admin athibitishe kupokea malipo yako. Kifurushi kitaanza baada ya kuthibitishwa.</p>
-                <a href={`https://wa.me/255717001506?text=${encodeURIComponent("YOUFLIX – TAARIFA ZA MALIPO\nKifurushi: " + selected.id + "\nKiasi: " + money(selected.price) + "\nNimetuma malipo kupitia Mixx by Yas kwenda 0717001506. Tafadhali thibitisheni malipo yangu.")}`}
-                  target="_blank" rel="noopener noreferrer"
-                  style={{ display: "block", textAlign: "center", textDecoration: "none", background: "#20c767", color: "#071b10", fontWeight: 800, padding: "14px 16px", borderRadius: 10, marginTop: 16 }}>
-                  TUMA TAARIFA WHATSAPP
-                </a>
-              </div>
-            </>
-          )}
+          <p className="help">{hasActivePlan
+            ? "Ombi lako la kubadilisha kifurushi limepokelewa. Lipa kifurushi kipya kisha tuma taarifa za malipo WhatsApp. Kifurushi chako cha sasa kitaendelea mpaka Admin athibitishe malipo na kuidhinisha mabadiliko."
+            : "Admin atathibitisha malipo kabla kifurushi chako hakijaanza."}</p>
+          <div style={{ marginTop: 18, padding: 16, border: "1px solid #ffffff30", borderRadius: 12, background: "#151515", color: "#fff" }}>
+            <h3 style={{ marginTop: 0 }}>YOUFLIX – MAELEKEZO YA MALIPO</h3>
+            <p>Asante {hasActivePlan ? "kwa kuomba kubadilisha kifurushi cha Youflix." : "kwa kujiunga na Youflix."}</p>
+            <p>Tafadhali lipia kifurushi ulichochagua kupitia:</p>
+            <p>Mtandao: <b>Mixx by Yas</b></p>
+            <p>Namba: <b style={{ fontSize: 20, color: "#ff5963" }}>0717001506</b></p>
+            <p>Jina: <b>JUMAA SAIDI</b></p>
+            <p>Kifurushi: <b>{selected.id}</b> · Kiasi: <b>{money(selected.price)}</b></p>
+            <p>{hasActivePlan
+              ? "Baada ya kufanya malipo, tuma taarifa zake WhatsApp. Admin akithibitisha malipo na kuidhinisha ombi, kifurushi kipya kitaanza. Kifurushi chako cha sasa kitaendelea hadi hapo."
+              : "Baada ya kufanya malipo, subiri Admin athibitishe kupokea malipo yako. Kifurushi kitaanza baada ya kuthibitishwa."}</p>
+            <a href={`https://wa.me/255717001506?text=${encodeURIComponent("YOUFLIX – TAARIFA ZA MALIPO\\nOmbi: " + (hasActivePlan ? "Kubadilisha kifurushi" : "Kujiunga") + "\\nKifurushi: " + selected.id + "\\nKiasi: " + money(selected.price) + "\\nNimetuma malipo kupitia Mixx by Yas kwenda 0717001506. Tafadhali thibitisheni malipo yangu.")}`}
+              target="_blank" rel="noopener noreferrer"
+              style={{ display: "block", textAlign: "center", textDecoration: "none", background: "#20c767", color: "#071b10", fontWeight: 800, padding: "14px 16px", borderRadius: 10, marginTop: 16 }}>
+              TUMA TAARIFA WHATSAPP
+            </a>
+          </div>
           <p className="help">Huduma kwa wateja: WhatsApp +255717001506.</p>
         </div>
       ) : (
