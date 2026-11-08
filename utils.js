@@ -18,11 +18,21 @@ export function posterStyle(v, saver) {
   return { backgroundImage: `linear-gradient(160deg,hsl(${h},60%,28%),hsl(${(h + 40) % 360},70%,10%))` };
 }
 
+// Normalize old genre names to the four official genres.
+export function canonicalGenre(value) {
+ const s = String(value || "").trim().toLowerCase();
+ if (/tamthilia|thamthilia|drama/.test(s)) return "Tamthilia";
+ if (/filamu|movie/.test(s)) return "Filamu";
+ if (/mawaidha|mahubiri|nasaha|hadithi/.test(s)) return "Mawaidha";
+ if (/vichekesho|comedy/.test(s)) return "Vichekesho";
+ return "";
+}
+
 // Chips / makundi
 const RX = {
   drama: /tamthilia|thamthilia|drama/i,
   movie: /filamu|movie/i,
-  mawaidha: /mawaidha|mahubiri|nasaha/i,
+  mawaidha: /mawaidha|mahubiri|nasaha|hadithi/i,
   comedy: /vichekesho|comedy/i,
 };
 export function filterVideos(videos, filt) {
