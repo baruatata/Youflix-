@@ -62,7 +62,7 @@ export default function MuxUploader({ notify, onSaved }) {
       const { error } = await supabase.from("media").insert({
         title: title.trim(),
         video_url: result.playbackUrl,
-        category: type === "series" ? "series" : "movie",
+        category: type === "series" ? "Mfululizo" : "Filamu",
         genre,
         release_year: Number(year) || new Date().getFullYear(),
         duration: result.duration ? Math.round(result.duration / 60) + " min" : "",
