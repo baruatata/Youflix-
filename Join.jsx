@@ -63,39 +63,32 @@ export default function Join({ onLogin, mode = "join" }) {
   const request = async () => {
     if (!me) return onLogin();
     if (!supabase || busy) return;
+    if (isChangeMode && !hasActivePlan) return notify("Huna kifurushi kinachoendelea cha kubadilisha.");
+    if (!isChangeMode && hasActivePlan) return notify("Tumia sehemu ya Badili Kifurushi.");
     setBusy(true);
     try {
-      let requestId = pendingRequest?.id;
-      if (!requestId) {
-        const { data: pendingRows, error: pendingError } = await supabase.from("subscription_requests")
-          .select("id,plan,price_tzs,credit_applied_tzs,admin_notes").eq("submitted_by", me.id)
-          .eq("status", "pending").neq("payment_status", "paid")
-          .order("created_at", { ascending: false }).limit(20);
-        if (pendingError) throw pendingError;
-        const pending = (pendingRows || []).find((row) => (row.admin_notes === "CHANGE_PLAN_REQUEST") === isChangeMode);
-        if (pending) {
-          requestId = pending.id;
-          setPendingRequest(pending);
-        }
-      }
-      const payload = {
-        full_name: me.name || "Mteja",
-        phone: me.contact || "",
+      const { data: requestId, error } = await supabase.rpc("submit_subscription_request", {
+        p_plan: selected.id,
+        p_price_tzs: amountDue,
+        p_credit_applied_tzs: creditToUse,
+        p_full_name: me.name || "Mteja",
+        p_phone: me.contact || "",
+        p_is_change: isChangeMode,
+      });
+      if (error) throw error;
+      if (!requestId) throw new Error("Ombi halikuhifadhiwa. Tafadhali jaribu tena.");
+      const savedRequest = {
+        id: requestId,
         plan: selected.id,
         price_tzs: amountDue,
         credit_applied_tzs: creditToUse,
-        submitted_by: me.id,
         admin_notes: isChangeMode ? "CHANGE_PLAN_REQUEST" : null,
       };
-      const result = requestId
-        ? await supabase.from("subscription_requests").update(payload).eq("id", requestId)
-        : await supabase.from("subscription_requests").insert(payload);
-      if (result.error) throw result.error;
-      setPendingRequest({ id: requestId, ...payload });
+      setPendingRequest(savedRequest);
       setSent(true);
-      notify(requestId
-        ? "Ombi lako limesasishwa. Tumia maelekezo mapya ya malipo."
-        : hasActivePlan ? "Ombi la kubadilishiwa kifurushi limetumwa kwa Admin." : "Ombi la kifurushi limetumwa.");
+      notify(isChangeMode
+        ? "Ombi la kubadilisha kifurushi limetumwa kwa Admin."
+        : "Ombi la kifurushi limetumwa.");
     } catch (err) {
       notify(err?.message || "Imeshindikana kutuma ombi. Jaribu tena.");
     } finally {
