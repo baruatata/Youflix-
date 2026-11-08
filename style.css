@@ -185,3 +185,9 @@ body.light .chip:not(.on){background:#e2e2e2;color:#111}
 
 @media(min-width:700px){.chips{max-width:560px}.card{flex-basis:150px}.grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}.hero{max-height:480px}.slide.promo{background-size:contain;background-repeat:no-repeat;background-position:center}}
 @media(prefers-reduced-motion:reduce){.slide,.drawer,.scrim{transition:none}}
+
+/* Hero images: picha ya kwanza inapakuliwa mapema na nyingine zinakuwa tayari kwa slide inayofuata. */
+.hero{background:linear-gradient(135deg,#181818,#090909)}
+.slide{background-color:#181818}
+.hero-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
+.slide.promo::after{z-index:1}
