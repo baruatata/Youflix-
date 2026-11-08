@@ -72,9 +72,19 @@ export function StoreProvider({ children }) {
       .eq("published", true)
       .order("created_at", { ascending: false })
       .then(({ data, error }) => {
-        if (!alive || error || !Array.isArray(data)) return;
+        if (!alive) return;
+        if (error) {
+          console.error("Youflix media load failed:", error);
+          setState((s) => ({ ...s, media: [] }));
+          notify("Video hazijapakiwa: " + (error.message || "Hitilafu ya Supabase"));
+          return;
+        }
+        if (!Array.isArray(data)) {
+          notify("Taarifa za video hazijapatikana. Jaribu ku-refresh ukurasa.");
+          return;
+        }
         const media = data.map((m) => ({
-          id: m.id, title: m.title, type: /series|episode/i.test(m.category || "") ? "series" : "movie",
+          id: m.id, title: m.title, type: /series|episode|mfululizo/i.test(m.category || "") ? "series" : "movie",
           genre: m.genre || m.category || "", year: m.release_year, dur: m.duration || "",
           desc: m.description || "", poster: m.poster_url || "", src: m.video_url || "",
           featured: !!m.featured, remote: true,
