@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "./supabase.js";
 
-const GENRES = ["Tamthilia", "Filamu", "Hadithi", "Vichekesho"];
+const GENRES = ["Tamthilia", "Filamu", "Mawaidha", "Vichekesho"];
 
 export default function MuxUploader({ notify, onSaved }) {
   const [busy, setBusy] = useState(false);
