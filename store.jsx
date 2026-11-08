@@ -67,8 +67,8 @@ export function StoreProvider({ children }) {
   useEffect(() => {
     if (!supabase) return;
     let alive = true;
-    supabase.from("media")
-      .select("id,title,category,release_year,duration,genre,description,poster_url,video_url,featured,published")
+    supabase.from("media_catalog")
+      .select("id,title,category,release_year,duration,genre,description,poster_url,featured,published")
       .eq("published", true)
       .order("created_at", { ascending: false })
       .then(({ data, error }) => {
@@ -86,7 +86,7 @@ export function StoreProvider({ children }) {
         const media = data.map((m) => ({
           id: m.id, title: m.title, type: /series|episode|mfululizo/i.test(m.category || "") ? "series" : "movie",
           genre: m.genre || m.category || "", year: m.release_year, dur: m.duration || "",
-          desc: m.description || "", poster: m.poster_url || "", src: m.video_url || "",
+          desc: m.description || "", poster: m.poster_url || "", src: "",
           featured: !!m.featured, remote: true,
         }));
         setState((s) => ({ ...s, media }));
