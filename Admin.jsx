@@ -86,7 +86,7 @@ export default function Admin({ onClose }) {
   }
 
   /* ---------- Video ---------- */
-  const editing = edit ? state.custom.find((c) => c.id === edit) : null;
+  const editing = edit ? videos.find((c) => c.id === edit) : null;
   const e0 = editing || {};
   const purl = e0.poster && !/^data:/.test(e0.poster) ? e0.poster : "";
 
@@ -95,28 +95,47 @@ export default function Admin({ onClose }) {
     setPoster(/^data:/.test(c.poster || "") ? c.poster : null);
     setFormKey((x) => x + 1);
   };
-  const saveVideo = (e) => {
+  const saveVideo = async (e) => {
     e.preventDefault();
     const f = new FormData(e.currentTarget), o = {};
     f.forEach((v, k) => { if (typeof v === "string") o[k] = v.trim(); });
     if (!o.title) return notify(t("ad_title_req"));
     if (o.src && !/^https?:\/\//i.test(o.src)) return notify(t("badlink"));
-    const img = poster || (/^https?:\/\//i.test(o.posterUrl || "") ? o.posterUrl : "");
+    if (!supabase) return notify("Supabase haijaunganishwa.");
+    let img = /^https?:\/\//i.test(o.posterUrl || "") ? o.posterUrl : "";
+    if (poster && poster.startsWith("data:")) {
+      try {
+        const blob = await (await fetch(poster)).blob();
+        const path = `posters/${Date.now()}-${Math.random().toString(36).slice(2)}.webp`;
+        const { error: uploadError } = await supabase.storage.from("hero-banners").upload(path, blob, { contentType: blob.type || "image/webp" });
+        if (uploadError) throw uploadError;
+        img = supabase.storage.from("hero-banners").getPublicUrl(path).data.publicUrl;
+      } catch (err) {
+        return notify(err?.message || "Imeshindikana kupakia picha ya jalada.");
+      }
+    }
     const rec = {
-      title: o.title, src: o.src || "", type: o.type === "series" ? "series" : "movie", genre: o.genre || "",
-      year: parseInt(o.year, 10) || new Date().getFullYear(), dur: o.dur || "", desc: o.desc || "",
+      title: o.title, video_url: o.src || "", category: o.type === "series" ? "series" : "movie",
+      genre: o.genre || "", release_year: parseInt(o.year, 10) || new Date().getFullYear(),
+      duration: o.dur || "", description: o.desc || "", poster_url: img || null, published: true,
     };
-    if (img) rec.poster = img;
     const isEdit = !!editing;
-    update((s) => ({
-      custom: isEdit ? s.custom.map((c) => (c.id === edit ? { ...rec, id: edit } : c)) : [...s.custom, { ...rec, id: "c" + Date.now() }],
-    }));
+    const result = isEdit
+      ? await supabase.from("media").update(rec).eq("id", edit).select("id").single()
+      : await supabase.from("media").insert(rec).select("id").single();
+    if (result.error) return notify(result.error.message || "Imeshindikana kuhifadhi video.");
+    const saved = { id: result.data.id, title: rec.title, src: rec.video_url, type: rec.category,
+      genre: rec.genre, year: rec.release_year, dur: rec.duration, desc: rec.description, poster: rec.poster_url, remote: true };
+    update((s) => ({ media: isEdit ? (s.media || []).map((v) => v.id === edit ? saved : v) : [saved, ...(s.media || [])] }));
     notify(t(isEdit ? "ad_updated" : "saved"));
     setEdit(null); setPoster(null); setFormKey((x) => x + 1);
   };
-  const delVideo = (id) => {
+  const delVideo = async (id) => {
     if (!window.confirm(t("delq"))) return;
-    update((s) => ({ custom: s.custom.filter((c) => c.id !== id), list: s.list.filter((i) => i !== id) }));
+    if (!supabase) return notify("Supabase haijaunganishwa.");
+    const { error } = await supabase.from("media").delete().eq("id", id);
+    if (error) return notify(error.message || "Imeshindikana kufuta video.");
+    update((s) => ({ media: (s.media || []).filter((c) => c.id !== id) }));
     if (edit === id) setEdit(null);
   };
 
@@ -147,9 +166,9 @@ export default function Admin({ onClose }) {
         <button className="btn" type="submit">{t("f_save")}</button>
         {editing && <button className="btn ghost" type="button" onClick={() => { setEdit(null); setPoster(null); setFormKey((x) => x + 1); }}>{t("ad_cancel")}</button>}
       </form>
-      <h2 className="sec">{t("myvideos")} ({state.custom.length})</h2>
-      {state.custom.length === 0 && <p className="empty">{t("ad_no_videos")}</p>}
-      {state.custom.slice().reverse().map((c) => (
+      <h2 className="sec">{t("myvideos")} ({videos.length})</h2>
+      {videos.length === 0 && <p className="empty">{t("ad_no_videos")}</p>}
+      {videos.slice().reverse().map((c) => (
         <div className="ad-row" key={c.id}>
           <span className="th" style={posterStyle(c, state.saver)} />
           <span className="info">
