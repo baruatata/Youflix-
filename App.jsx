@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
-import Header from "./components/Header";
-import Drawer from "./components/Drawer";
-import Footer from "./components/Footer";
-import Player from "./components/Player";
-import Auth from "./components/Auth";
-import Admin from "./components/Admin";
-import Toast from "./components/Toast";
-import { Grid } from "./components/VideoCard";
-import Home from "./pages/Home";
-import Settings from "./pages/Settings";
-import { useStore } from "./lib/store";
+import Header from "./Header.jsx";
+import Drawer from "./Drawer.jsx";
+import Footer from "./Footer.jsx";
+import Player from "./Player.jsx";
+import Auth from "./Auth.jsx";
+import Admin from "./Admin.jsx";
+import Toast from "./Toast.jsx";
+import { Grid } from "./VideoCard.jsx";
+import Home from "./Home.jsx";
+import Settings from "./Settings.jsx";
+import { useStore } from "./store.jsx";
 
 const ROUTES = ["home", "movies", "series", "mylist", "settings"];
 const readRoute = () => {
