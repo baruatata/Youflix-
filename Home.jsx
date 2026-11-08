@@ -1,8 +1,8 @@
-import Hero from "../components/Hero";
-import Chips from "../components/Chips";
-import { Rail } from "../components/VideoCard";
-import { useStore } from "../lib/store";
-import { filterVideos } from "../lib/utils";
+import Hero from "./Hero.jsx";
+import Chips from "./Chips.jsx";
+import { Rail } from "./VideoCard.jsx";
+import { useStore } from "./store.jsx";
+import { filterVideos } from "./utils.js";
 
 export default function Home({ filt, setFilt, onOpen }) {
   const { state, t, videos } = useStore();
