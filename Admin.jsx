@@ -3,6 +3,7 @@ import { supabase } from "./supabase.js";
 import Icon from "./Icon";
 import { useStore } from "./store.jsx";
 import { download, newSalt, okImg, posterStyle, readImage, sha } from "./utils.js";
+import MuxUploader from "./MuxUploader.jsx";
 
 // Barua pepe ya admin haiko wazi kwenye msimbo — kuna alama yake iliyosimbwa (SHA-256) tu.
 // Ili kubadilisha admin: sha256("barua@pepe.com" kwa herufi ndogo) na uiweke hapa (pamoja na toleo mbadala la "f..." kwa vivinjari visivyo na crypto.subtle).
@@ -225,6 +226,7 @@ export default function Admin({ onClose }) {
 
   const videosTab = (
     <>
+      <MuxUploader notify={notify} onSaved={() => window.location.reload()} />
       <h2 className="sec">{t(editing ? "ad_edit_video" : "addvideo")}</h2>
       <form className="form" key={formKey} onSubmit={saveVideo}>
         <label>{t("f_title")}<input name="title" required maxLength={80} defaultValue={e0.title || ""} /></label>
