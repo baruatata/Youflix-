@@ -21,6 +21,8 @@ export default function Join({ onLogin }) {
   const selected = PLANS.find((p) => p.id === plan) || PLANS[0];
   const creditToUse = Math.min(Math.max(0, creditBalance), selected.price);
   const amountDue = Math.max(0, selected.price - creditToUse);
+  const displayedCredit = sent && pendingRequest ? Number(pendingRequest.credit_applied_tzs || 0) : creditToUse;
+  const displayedDue = sent && pendingRequest ? Number(pendingRequest.price_tzs || 0) : amountDue;
   const current = state.subscription;
   const hasActivePlan = !!current && current.status === "active" &&
     Number.isFinite(Date.parse(current.ends_at)) && Date.parse(current.ends_at) > Date.now();
@@ -64,7 +66,7 @@ export default function Join({ onLogin }) {
       let requestId = pendingRequest?.id;
       if (!requestId) {
         const { data: pending, error: pendingError } = await supabase.from("subscription_requests")
-          .select("id,plan,price_tzs,admin_notes").eq("submitted_by", me.id)
+          .select("id,plan,price_tzs,credit_applied_tzs,admin_notes").eq("submitted_by", me.id)
           .eq("status", "pending").neq("payment_status", "paid")
           .order("created_at", { ascending: false }).limit(1).maybeSingle();
         if (pendingError) throw pendingError;
@@ -125,12 +127,12 @@ export default function Join({ onLogin }) {
             <p>Namba: <b style={{ fontSize: 20, color: "#ff5963" }}>0717001506</b></p>
             <p>Jina: <b>JUMAA SAIDI</b></p>
             <p>Kifurushi: <b>{selected.id}</b> · Bei: <b>{money(selected.price)}</b></p>
-            {creditToUse > 0 && <p>Youflix Credit: <b>{money(creditToUse)}</b></p>}
-            <p>Kiasi cha kulipa: <b>{money(amountDue)}</b></p>
+            {displayedCredit > 0 && <p>Youflix Credit: <b>{money(displayedCredit)}</b></p>}
+            <p>Kiasi cha kulipa: <b>{money(displayedDue)}</b></p>
             <p>{hasActivePlan
               ? "Baada ya kufanya malipo, tuma taarifa zake WhatsApp. Admin akithibitisha malipo na kuidhinisha ombi, kifurushi kipya kitaanza. Kifurushi chako cha sasa kitaendelea hadi hapo."
               : "Baada ya kufanya malipo, subiri Admin athibitishe kupokea malipo yako. Kifurushi kitaanza baada ya kuthibitishwa."}</p>
-            <a href={`https://wa.me/255717001506?text=${encodeURIComponent("YOUFLIX – TAARIFA ZA MALIPO\\nOmbi: " + (hasActivePlan ? "Kubadilisha kifurushi" : "Kujiunga") + "\\nKifurushi: " + selected.id + "\\nBei: " + money(selected.price) + "\\nYouflix Credit: " + money(creditToUse) + "\\nKiasi cha kulipa: " + money(amountDue) + "\\nNimetuma malipo kupitia Mixx by Yas kwenda 0717001506. Tafadhali thibitisheni malipo yangu.")}`}
+            <a href={`https://wa.me/255717001506?text=${encodeURIComponent("YOUFLIX – TAARIFA ZA MALIPO\\nOmbi: " + (hasActivePlan ? "Kubadilisha kifurushi" : "Kujiunga") + "\\nKifurushi: " + selected.id + "\\nBei: " + money(selected.price) + "\\nYouflix Credit: " + money(displayedCredit) + "\\nKiasi cha kulipa: " + money(displayedDue) + "\\nNimetuma malipo kupitia Mixx by Yas kwenda 0717001506. Tafadhali thibitisheni malipo yangu.")}`}
               target="_blank" rel="noopener noreferrer"
               style={{ display: "block", textAlign: "center", textDecoration: "none", background: "#20c767", color: "#071b10", fontWeight: 800, padding: "14px 16px", borderRadius: 10, marginTop: 16 }}>
               TUMA TAARIFA WHATSAPP
