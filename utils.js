@@ -20,7 +20,7 @@ export function posterStyle(v, saver) {
 
 // Chips / makundi
 const RX = {
-  drama: /thamthilia|drama/i,
+  drama: /tamthilia|thamthilia|drama/i,
   story: /hadithi|stor/i,
   comedy: /vichekesho|comedy/i,
   kids: /katuni|watoto|kids|cartoon/i,
