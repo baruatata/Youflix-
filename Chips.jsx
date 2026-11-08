@@ -1,4 +1,4 @@
-import { useStore } from "../lib/store";
+import { useStore } from "./store.jsx";
 
 const L = [["drama", "c_drama"], ["story", "c_story"], ["movie", "c_movie"], ["comedy", "c_comedy"]];
 
