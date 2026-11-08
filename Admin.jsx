@@ -146,18 +146,49 @@ export default function Admin({ onClose }) {
   /* ---------- Mabango ---------- */
   const mine = (state.promos || []).map((p) => p.id);
   const hidden = state.hidePromos || [];
-  const addBanner = (e) => {
+  const addBanner = async (e) => {
     e.preventDefault();
-    const f = new FormData(e.currentTarget), url = String(f.get("url") || "").trim(), alt = String(f.get("alt") || "").trim();
-    const img = banner || (/^https?:\/\//i.test(url) ? url : "");
+    const f = new FormData(e.currentTarget);
+    const url = String(f.get("url") || "").trim();
+    const alt = String(f.get("alt") || "").trim();
+    if (!supabase) return notify("Supabase haijaunganishwa.");
+    let img = /^https?:\/\//i.test(url) ? url : "";
+    let storagePath = null;
+    if (banner && banner.startsWith("data:")) {
+      try {
+        const blob = await (await fetch(banner)).blob();
+        storagePath = `hero/${Date.now()}-${Math.random().toString(36).slice(2)}.webp`;
+        const { error: uploadError } = await supabase.storage.from("hero-banners").upload(storagePath, blob, { contentType: blob.type || "image/webp" });
+        if (uploadError) throw uploadError;
+        img = supabase.storage.from("hero-banners").getPublicUrl(storagePath).data.publicUrl;
+      } catch (err) {
+        return notify(err?.message || "Imeshindikana kupakia picha.");
+      }
+    }
     if (!img) return notify(t("ad_need_img"));
-    update((s) => ({ promos: [...(s.promos || []), { id: "bp" + Date.now(), img, alt }] }));
+    const { data, error } = await supabase.from("hero_banners").insert({
+      title: alt || "Youflix banner", subtitle: "", image_url: img,
+      storage_path: storagePath, is_active: true, sort_order: promos.length,
+    }).select("id,title,image_url,storage_path").single();
+    if (error) return notify(error.message);
+    update((st) => ({ promos: [...(st.promos || []), {
+      id: data.id, img: data.image_url, alt: data.title, remote: true, storage_path: data.storage_path,
+    }] }));
     setBanner(null); setFormKey((x) => x + 1); notify(t("ad_banner_saved"));
   };
-  const delBanner = (id) => {
+  const delBanner = async (id) => {
     if (!window.confirm(t("delq"))) return;
-    if (mine.includes(id)) update((s) => ({ promos: s.promos.filter((p) => p.id !== id) }));
-    else update((s) => ({ hidePromos: [...(s.hidePromos || []), id] }));
+    const item = (state.promos || []).find((p) => p.id === id);
+    if (item?.remote) {
+      const { error } = await supabase.from("hero_banners").delete().eq("id", id);
+      if (error) return notify(error.message);
+      if (item.storage_path) await supabase.storage.from("hero-banners").remove([item.storage_path]);
+      update((st) => ({ promos: (st.promos || []).filter((p) => p.id !== id) }));
+    } else if (mine.includes(id)) {
+      update((st) => ({ promos: (st.promos || []).filter((p) => p.id !== id) }));
+    } else {
+      update((st) => ({ hidePromos: [...(st.hidePromos || []), id] }));
+    }
   };
 
   const bannersTab = (
@@ -168,7 +199,7 @@ export default function Admin({ onClose }) {
       {promos.map((p) => (
         <div className="ad-row" key={p.id}>
           <span className="th" style={{ backgroundImage: `url(${JSON.stringify(p.img)})` }} />
-          <span className="info"><b>{p.alt || "—"}</b>{!mine.includes(p.id) && <small>{t("ad_builtin")}</small>}</span>
+          <span className="info"><b>{p.alt || "—"}</b>{!mine.includes(p.id) && <small>{t("ad_builtin")}</small>}{p.remote && <small>Supabase</small>}</span>
           <button className="btn ghost" onClick={() => delBanner(p.id)}>{t(mine.includes(p.id) ? "del" : "ad_hide")}</button>
         </div>
       ))}
