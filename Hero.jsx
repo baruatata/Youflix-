@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useStore } from "../lib/store";
+import { useStore } from "./store.jsx";
 
 // Hero: mabango na matangazo tu (picha). Haichezi video na haigusiki.
 export default function Hero() {
