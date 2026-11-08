@@ -102,7 +102,18 @@ export default function Admin({ onClose }) {
     if (!o.title) return notify(t("ad_title_req"));
     if (o.src && !/^https?:\/\//i.test(o.src)) return notify(t("badlink"));
     if (!supabase) return notify("Supabase haijaunganishwa.");
-    const img = poster || (/^https?:\/\//i.test(o.posterUrl || "") ? o.posterUrl : "");
+    let img = /^https?:\/\//i.test(o.posterUrl || "") ? o.posterUrl : "";
+    if (poster && poster.startsWith("data:")) {
+      try {
+        const blob = await (await fetch(poster)).blob();
+        const path = `posters/${Date.now()}-${Math.random().toString(36).slice(2)}.webp`;
+        const { error: uploadError } = await supabase.storage.from("hero-banners").upload(path, blob, { contentType: blob.type || "image/webp" });
+        if (uploadError) throw uploadError;
+        img = supabase.storage.from("hero-banners").getPublicUrl(path).data.publicUrl;
+      } catch (err) {
+        return notify(err?.message || "Imeshindikana kupakia picha ya jalada.");
+      }
+    }
     const rec = {
       title: o.title, video_url: o.src || "", category: o.type === "series" ? "series" : "movie",
       genre: o.genre || "", release_year: parseInt(o.year, 10) || new Date().getFullYear(),
