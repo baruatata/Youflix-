@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { T } from "./i18n.js";
 import { PROMOS, VIDEOS } from "./catalog.js";
+import { supabase } from "./supabase.js";
 
 // Ufunguo na umbo ni sawa na toleo la HTML, kwa hiyo data ya watumiaji wa zamani inaendelea kufanya kazi.
 const KEY = "youflix.v1";
@@ -23,6 +24,30 @@ export const useStore = () => useContext(Ctx);
 
 export function StoreProvider({ children }) {
   const [state, setState] = useState(load);
+
+  // Pakua Hero banners zinazotumika kutoka Supabase; hifadhi data ya zamani ya kifaa.
+  useEffect(() => {
+    if (!supabase) return;
+    let alive = true;
+    supabase.from("hero_banners")
+      .select("id,title,subtitle,image_url,is_active,sort_order,storage_path")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+      .then(({ data, error }) => {
+        if (!alive || error || !Array.isArray(data)) return;
+        const remote = data.map((b) => ({
+          id: b.id, img: b.image_url, alt: b.title || b.subtitle || "",
+          remote: true, storage_path: b.storage_path || null,
+        }));
+        setState((s) => {
+          const local = (s.promos || []).filter((p) => !p.remote);
+          const oldRemote = (s.promos || []).filter((p) => p.remote);
+          const merged = [...local, ...remote];
+          return { ...s, promos: merged.length ? merged : oldRemote };
+        });
+      });
+    return () => { alive = false; };
+  }, []);
   const [toast, setToast] = useState("");
   const timer = useRef(0);
   const warned = useRef(false);
