@@ -7,7 +7,7 @@ export default function Header({ onMenu, onSearch, onAccount, searchOpen, query,
     <>
       <header className="top">
         <button className="icon-btn" aria-label={t("menu")} onClick={onMenu}><Icon name="menu" /></button>
-        <a className="brand" href="#home" aria-label="Youflix" />
+        <a className="brand" href="/" aria-label="Youflix" onClick={(e) => { e.preventDefault(); window.location.reload(); }} />
         <div className="tr">
           <button className="icon-btn" aria-label={t("search_ph")} onClick={onSearch}><Icon name="search" /></button>
           <button className="pill red" onClick={onAccount}>
