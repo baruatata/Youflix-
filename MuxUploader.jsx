@@ -12,6 +12,7 @@ export default function MuxUploader({ notify, onSaved }) {
   const [genre, setGenre] = useState("Tamthilia");
   const [year, setYear] = useState(String(new Date().getFullYear()));
   const [description, setDescription] = useState("");
+  const [coverFile, setCoverFile] = useState(null);
 
   const api = async (action, extra = {}) => {
     const { data } = await supabase.auth.getSession();
@@ -31,7 +32,11 @@ export default function MuxUploader({ notify, onSaved }) {
     event.preventDefault();
     const form = event.currentTarget;
     const file = form.elements.video.files?.[0];
+    const cover = form.elements.cover.files?.[0];
     if (!file) return notify("Chagua video kutoka kwenye simu yako.");
+    if (!cover) return notify("Chagua picha ya cover ya video.");
+    if (!cover.type.startsWith("image/")) return notify("Cover lazima iwe picha.");
+    if (cover.size > 8 * 1024 * 1024) return notify("Picha ya cover isizidi MB 8.");
     if (!title.trim()) return notify("Weka jina la video.");
     if (!supabase) return notify("Supabase haijaunganishwa.");
     if (busy) return;
@@ -60,9 +65,20 @@ export default function MuxUploader({ notify, onSaved }) {
         if (result.status === "errored" || result.status === "cancelled") throw new Error("Mux imeshindwa kuchakata video hii.");
       }
       if (!result?.ready || !result.playbackUrl) throw new Error("Video bado inachakatwa. Jaribu tena baada ya dakika chache; upload imetumwa Mux.");
+      setStatus("Inahifadhi picha ya cover...");
+      const coverExt = (cover.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+      const coverPath = `posters/${Date.now()}-${Math.random().toString(36).slice(2)}.${coverExt}`;
+      const { error: coverError } = await supabase.storage.from("hero-banners").upload(coverPath, cover, {
+        contentType: cover.type,
+        cacheControl: "31536000",
+        upsert: false,
+      });
+      if (coverError) throw new Error("Imeshindikana kuhifadhi cover: " + coverError.message);
+      const posterUrl = supabase.storage.from("hero-banners").getPublicUrl(coverPath).data.publicUrl;
       const { error } = await supabase.from("media").insert({
         title: title.trim(),
         video_url: result.playbackUrl,
+        poster_url: posterUrl,
         category: type === "series" ? "Mfululizo" : "Filamu",
         genre,
         release_year: Number(year) || new Date().getFullYear(),
@@ -73,7 +89,7 @@ export default function MuxUploader({ notify, onSaved }) {
       if (error) throw error;
       setStatus("Video imehifadhiwa na iko tayari kutazamwa.");
       notify("Video imepakiwa Mux na kuhifadhiwa Youflix.");
-      setTitle(""); setDescription(""); setProgress(0);
+      setTitle(""); setDescription(""); setProgress(0); setCoverFile(null);
       form.reset();
       onSaved?.();
     } catch (error) {
@@ -94,7 +110,9 @@ export default function MuxUploader({ notify, onSaved }) {
         <label>Aina ya video<select value={genre} onChange={(e) => setGenre(e.target.value)}>{GENRES.map((g) => <option key={g} value={g}>{g}</option>)}</select></label>
         <label>Mwaka<input type="number" min="1900" max="2100" value={year} onChange={(e) => setYear(e.target.value)} /></label>
         <label>Maelezo<input value={description} onChange={(e) => setDescription(e.target.value)} maxLength={300} /></label>
-        <label>Chagua video<input name="video" type="file" accept="video/*" required disabled={busy} /></label>
+        <label>Chagua cover / poster ya video<input name="cover" type="file" accept="image/*" required disabled={busy} onChange={(e) => setCoverFile(e.target.files?.[0] || null)} /></label>
+      {coverFile && <p className="help">Cover imechaguliwa: {coverFile.name}</p>}
+      <label>Chagua video<input name="video" type="file" accept="video/*" required disabled={busy} /></label>
         {busy && <div><p className="help">{status}</p><progress value={progress} max="100" style={{ width: "100%" }} /> <small>{progress}%</small></div>}
         {!busy && status && <p className="help">{status}</p>}
         <button className="btn" type="submit" disabled={busy}>{busy ? "Inapakia..." : "Pakia video Mux"}</button>
