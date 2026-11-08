@@ -17,6 +17,7 @@ export default function Auth({ onClose }) {
   const [phoneRaw, setPhoneRaw] = useState("");
   const [phone, setPhone] = useState("");
   const [pass, setPass] = useState("");
+  const [otp, setOtp] = useState("");
   const [keptPass, setKeptPass] = useState("");
   const [name, setName] = useState("");
   const [signupPlan, setSignupPlan] = useState("Siku");
@@ -29,7 +30,8 @@ export default function Auth({ onClose }) {
     step === 1 ? !!normPhone(phoneRaw) && (mode === "login" || agree) :
     step === 2 ? pass.length >= 8 :
     step === 3 ? name.trim().length >= 2 :
-    !!signupPlan;
+    step === 4 ? !!signupPlan :
+    /^\\d{6}$/.test(otp);
 
   const completeLogin = async (data, closeAfterLogin = true) => {
     if (!data?.session?.access_token || !data?.session?.refresh_token || !data?.user?.id) {
@@ -108,9 +110,22 @@ export default function Auth({ onClose }) {
         setStep(3);
       } else if (step === 3) {
         setStep(4);
+      } else if (step === 4) {
+        const { data, error } = await supabase.functions.invoke("phone-account-auth", {
+          body: { action: "send_signup_otp", phone },
+        });
+        if (error) {
+          let serverMessage = "";
+          try { serverMessage = (await error.context?.json())?.error || ""; } catch {}
+          throw new Error(serverMessage || data?.error || error.message || "Imeshindikana kutuma OTP.");
+        }
+        if (data?.error) throw new Error(data.error);
+        setOtp("");
+        setStep(5);
+        notify(data?.message || "OTP imetumwa kwenye namba yako.");
       } else {
         const { data, error } = await supabase.functions.invoke("phone-account-auth", {
-          body: { action: "signup", phone, password: keptPass, full_name: name.trim() },
+          body: { action: "signup", phone, password: keptPass, full_name: name.trim(), otp },
         });
         if (error) throw new Error(data?.error || error.message || "Usajili haukufanikiwa.");
         if (data?.error) throw new Error(data.error);
@@ -138,9 +153,9 @@ export default function Auth({ onClose }) {
   };
 
   const c = (k) => (step === k ? "on" : step > k ? "done" : "");
-  const title = step === 1 ? t("a_wb") : step === 2 ? t(mode === "login" ? "a_pass_title_login" : "a_new_title") : step === 3 ? t("a_name_title") : "Chagua kifurushi";
-  const sub = step === 1 ? t("a_wb_sub") : step === 2 ? t(mode === "login" ? "a_pass_sub_login" : "a_new_sub") : step === 3 ? t("a_name_sub") : "Chagua kifurushi unachotaka kujiunga nacho.";
-  const btn = step === 1 ? t("a_continue") : step === 2 ? t(mode === "login" ? "login" : "a_continue") : step === 3 ? t("a_continue") : t("a_finish");
+  const title = step === 1 ? t("a_wb") : step === 2 ? t(mode === "login" ? "a_pass_title_login" : "a_new_title") : step === 3 ? t("a_name_title") : step === 4 ? "Chagua kifurushi" : "Thibitisha namba yako";
+  const sub = step === 1 ? t("a_wb_sub") : step === 2 ? t(mode === "login" ? "a_pass_sub_login" : "a_new_sub") : step === 3 ? t("a_name_sub") : step === 4 ? "Chagua kifurushi unachotaka kujiunga nacho." : "Tumepeleka msimbo wa tarakimu 6 kwa SMS kwenye +" + phone + ".";
+  const btn = step === 1 ? t("a_continue") : step === 2 ? t(mode === "login" ? "login" : "a_continue") : step === 3 ? t("a_continue") : step === 4 ? "Tuma OTP" : "Thibitisha na jisajili";
 
   return (
     <div id="auth" className="modal">
@@ -154,7 +169,7 @@ export default function Auth({ onClose }) {
           <div className="steps">
             <b className={c(1)}>{step > 1 ? <Icon name="check" size={18} /> : "1"}</b><i />
             <b className={c(2)}>{step > 2 ? <Icon name="check" size={18} /> : "2"}</b><i />
-            <b className={c(3)}>{step > 3 ? <Icon name="check" size={18} /> : "3"}</b><i /><b className={c(4)}>4</b>
+            <b className={c(3)}>{step > 3 ? <Icon name="check" size={18} /> : "3"}</b><i /><b className={c(4)}>{step > 4 ? <Icon name="check" size={18} /> : "4"}</b><i /><b className={step === 5 ? "on" : ""}>5</b>
           </div>
           <h2>{title}</h2>
           <p className="sub">{sub}</p>
@@ -227,6 +242,40 @@ export default function Auth({ onClose }) {
                 ))}
               </select>
               <p className="help">Kifurushi kitaanza baada ya Admin kuthibitisha malipo. Hakuna malipo ya moja kwa moja yanayokatwa hapa.</p>
+            </>
+          )}
+
+
+          {step === 5 && (
+            <>
+              <label className="ap-label" htmlFor="apOtp">Msimbo wa OTP</label>
+              <div className="fieldwrap">
+                <input id="apOtp" type="text" inputMode="numeric" autoComplete="one-time-code"
+                  placeholder="000000" maxLength={6} value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\\D/g, "").slice(0, 6))} />
+              </div>
+              <p className="help">OTP inatumika kwa dakika 5. Usiishirikishe na mtu mwingine.</p>
+              <button type="button" className="ap-link" disabled={busy}
+                onClick={async () => {
+                  if (busy) return;
+                  setBusy(true);
+                  try {
+                    const { data, error } = await supabase.functions.invoke("phone-account-auth", {
+                      body: { action: "send_signup_otp", phone },
+                    });
+                    if (error) {
+                      let serverMessage = "";
+                      try { serverMessage = (await error.context?.json())?.error || ""; } catch {}
+                      throw new Error(serverMessage || data?.error || error.message);
+                    }
+                    if (data?.error) throw new Error(data.error);
+                    notify("OTP mpya imetumwa.");
+                  } catch (err) {
+                    notify(err?.message || "Imeshindikana kutuma OTP.");
+                  } finally {
+                    setBusy(false);
+                  }
+                }}>Tuma OTP tena</button>
             </>
           )}
 
