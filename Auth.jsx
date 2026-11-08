@@ -4,12 +4,6 @@ import { useStore } from "./store.jsx";
 import { supabase } from "./supabase.js";
 import { fmtPhone, normPhone } from "./utils.js";
 
-const SIGNUP_PLANS = [
-  { id: "Siku", days: 1, price: 500 },
-  { id: "Wiki", days: 7, price: 2000 },
-  { id: "Mwezi", days: 30, price: 7000 },
-];
-
 export default function Auth({ onClose }) {
   const { state, update, t, notify } = useStore();
   const [step, setStep] = useState(1);
@@ -20,18 +14,15 @@ export default function Auth({ onClose }) {
   const [otp, setOtp] = useState("");
   const [keptPass, setKeptPass] = useState("");
   const [name, setName] = useState("");
-  const [signupPlan, setSignupPlan] = useState("Siku");
   const [show, setShow] = useState(false);
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [paymentNotice, setPaymentNotice] = useState(null);
 
   const valid =
     step === 1 ? !!normPhone(phoneRaw) && (mode === "login" || agree) :
     step === 2 ? pass.length >= 8 :
     step === 3 ? name.trim().length >= 2 :
-    step === 4 ? !!signupPlan :
-    /^\\d{6}$/.test(otp);
+    step === 4 ? /^\d{6}$/.test(otp) : false;
 
   const completeLogin = async (data, closeAfterLogin = true) => {
     if (!data?.session?.access_token || !data?.session?.refresh_token || !data?.user?.id) {
@@ -88,29 +79,12 @@ export default function Auth({ onClose }) {
           return;
         }
         if (data?.error) throw new Error(data.error);
-        const { data: packageRequest, error: packageError } = await supabase
-          .from("subscription_requests")
-          .select("id")
-          .eq("submitted_by", data.user.id)
-          .limit(1)
-          .maybeSingle();
-        if (packageError) throw new Error("Imeshindikana kuhakiki usajili wa kifurushi. Jaribu tena.");
-        if (!packageRequest) {
-          setMode("signup");
-          setStep(1);
-          setPass("");
-          setAgree(false);
-          notify("Ndugu mteja, jisajili kabla ya kuingia katika mfumo. Asante.");
-          return;
-        }
         await completeLogin(data);
       } else if (step === 2) {
         setKeptPass(pass);
         setPass("");
         setStep(3);
       } else if (step === 3) {
-        setStep(4);
-      } else if (step === 4) {
         const { data, error } = await supabase.functions.invoke("phone-account-auth", {
           body: { action: "send_signup_otp", phone },
         });
@@ -121,7 +95,7 @@ export default function Auth({ onClose }) {
         }
         if (data?.error) throw new Error(data.error);
         setOtp("");
-        setStep(5);
+        setStep(4);
         notify(data?.message || "OTP imetumwa kwenye namba yako.");
       } else {
         const { data, error } = await supabase.functions.invoke("phone-account-auth", {
@@ -129,21 +103,7 @@ export default function Auth({ onClose }) {
         });
         if (error) throw new Error(data?.error || error.message || "Usajili haukufanikiwa.");
         if (data?.error) throw new Error(data.error);
-        const chosenPlan = SIGNUP_PLANS.find((p) => p.id === signupPlan) || SIGNUP_PLANS[0];
-        const { error: requestError } = await supabase.from("subscription_requests").insert({
-          full_name: name.trim(),
-          phone,
-          plan: chosenPlan.id,
-          price_tzs: chosenPlan.price,
-          submitted_by: data.user.id,
-        });
-        await completeLogin(data, false);
-        if (requestError) {
-          notify("Akaunti imetengenezwa, lakini ombi la kifurushi halikutumwa: " + requestError.message);
-          onClose();
-        } else {
-          setPaymentNotice({ name: name.trim(), phone, plan: chosenPlan.id, price: chosenPlan.price });
-        }
+        await completeLogin(data);
       }
     } catch (err) {
       notify(err?.message || "Imeshindikana. Tafadhali jaribu tena.");
@@ -153,9 +113,9 @@ export default function Auth({ onClose }) {
   };
 
   const c = (k) => (step === k ? "on" : step > k ? "done" : "");
-  const title = step === 1 ? t("a_wb") : step === 2 ? t(mode === "login" ? "a_pass_title_login" : "a_new_title") : step === 3 ? t("a_name_title") : step === 4 ? "Chagua kifurushi" : "Thibitisha namba yako";
-  const sub = step === 1 ? t("a_wb_sub") : step === 2 ? t(mode === "login" ? "a_pass_sub_login" : "a_new_sub") : step === 3 ? t("a_name_sub") : step === 4 ? "Chagua kifurushi unachotaka kujiunga nacho." : "Tumepeleka msimbo wa tarakimu 6 kwa SMS kwenye +" + phone + ".";
-  const btn = step === 1 ? t("a_continue") : step === 2 ? t(mode === "login" ? "login" : "a_continue") : step === 3 ? t("a_continue") : step === 4 ? "Tuma OTP" : "Thibitisha na jisajili";
+  const title = step === 1 ? t("a_wb") : step === 2 ? t(mode === "login" ? "a_pass_title_login" : "a_new_title") : step === 3 ? t("a_name_title") : "Thibitisha namba yako";
+  const sub = step === 1 ? t("a_wb_sub") : step === 2 ? t(mode === "login" ? "a_pass_sub_login" : "a_new_sub") : step === 3 ? t("a_name_sub") : "Tumepeleka msimbo wa tarakimu 6 kwa SMS kwenye +" + phone + ".";
+  const btn = step === 1 ? t("a_continue") : step === 2 ? t(mode === "login" ? "login" : "a_continue") : step === 3 ? "Tuma OTP" : "Thibitisha na jisajili";
 
   return (
     <div id="auth" className="modal">
@@ -169,7 +129,7 @@ export default function Auth({ onClose }) {
           <div className="steps">
             <b className={c(1)}>{step > 1 ? <Icon name="check" size={18} /> : "1"}</b><i />
             <b className={c(2)}>{step > 2 ? <Icon name="check" size={18} /> : "2"}</b><i />
-            <b className={c(3)}>{step > 3 ? <Icon name="check" size={18} /> : "3"}</b><i /><b className={c(4)}>{step > 4 ? <Icon name="check" size={18} /> : "4"}</b><i /><b className={step === 5 ? "on" : ""}>5</b>
+            <b className={c(3)}>{step > 3 ? <Icon name="check" size={18} /> : "3"}</b><i /><b className={step === 4 ? "on" : ""}>4</b>
           </div>
           <h2>{title}</h2>
           <p className="sub">{sub}</p>
@@ -226,33 +186,18 @@ export default function Auth({ onClose }) {
                 <input id="apName" type="text" autoFocus autoComplete="name" maxLength={60} value={name}
                   onChange={(e) => setName(e.target.value)} />
               </div>
-              <p className="help">Jaza jina lako kamili kisha endelea kuchagua kifurushi.</p>
+              <p className="help">Jaza jina lako kamili kisha endelea kuthibitisha namba yako.</p>
             </>
           )}
+
 
           {step === 4 && (
-            <>
-              <label className="ap-label" htmlFor="signupPlan">Chagua kifurushi</label>
-              <select id="signupPlan" value={signupPlan} onChange={(e) => setSignupPlan(e.target.value)}
-                style={{ width: "100%", minHeight: 48, marginTop: 8, padding: "10px 12px", borderRadius: 10 }}>
-                {SIGNUP_PLANS.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.id === "Siku" ? "Siku 1" : p.id === "Wiki" ? "Wiki 7" : "Mwezi 30"} — TSh {p.price.toLocaleString("en-US")}
-                  </option>
-                ))}
-              </select>
-              <p className="help">Kifurushi kitaanza baada ya Admin kuthibitisha malipo. Hakuna malipo ya moja kwa moja yanayokatwa hapa.</p>
-            </>
-          )}
-
-
-          {step === 5 && (
             <>
               <label className="ap-label" htmlFor="apOtp">Msimbo wa OTP</label>
               <div className="fieldwrap">
                 <input id="apOtp" type="text" inputMode="numeric" autoComplete="one-time-code"
                   placeholder="000000" maxLength={6} value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\\D/g, "").slice(0, 6))} />
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))} />
               </div>
               <p className="help">OTP inatumika kwa dakika 5. Usiishirikishe na mtu mwingine.</p>
               <button type="button" className="ap-link" disabled={busy}
@@ -285,31 +230,6 @@ export default function Auth({ onClose }) {
         </div>
         <p className="ap-foot">{t("a_secure")}</p>
       </form>
-      {paymentNotice && (
-        <div role="dialog" aria-modal="true" aria-labelledby="payment-title"
-          style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(0,0,0,.88)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div style={{ width: "100%", maxWidth: 440, background: "#151515", color: "#fff", border: "1px solid #ffffff25", borderRadius: 18, padding: 24, boxShadow: "0 20px 60px #000" }}>
-            <h2 id="payment-title" style={{ marginTop: 0 }}>YOUFLIX – MAELEKEZO YA MALIPO</h2>
-            <p>Asante kwa kujiunga na Youflix.</p>
-            <p>Tafadhali lipia kifurushi ulichochagua kupitia:</p>
-            <p>Mtandao: <b>Mixx by Yas</b></p>
-            <p>Namba: <b style={{ fontSize: 20, color: "#ff5963" }}>0717001506</b></p>
-            <p>Jina: <b>JUMAA SAIDI</b></p>
-            <p>Kifurushi: <b>{paymentNotice.plan}</b> · Kiasi: <b>TSh {paymentNotice.price.toLocaleString("en-US")}</b></p>
-            <p style={{ lineHeight: 1.5 }}>Baada ya kufanya malipo, subiri Admin athibitishe kupokea malipo yako. Kifurushi kitaanza baada ya kuthibitishwa.</p>
-            <p style={{ lineHeight: 1.5 }}>Bonyeza kitufe hapa chini kutuma taarifa za muamala WhatsApp. Ambatanisha uthibitisho wa malipo kabla ya kutuma.</p>
-            <a href={`https://wa.me/255717001506?text=${encodeURIComponent("YOUFLIX – TAARIFA ZA MALIPO\\nJina: " + paymentNotice.name + "\\nNamba ya akaunti: " + paymentNotice.phone + "\\nKifurushi: " + paymentNotice.plan + "\\nKiasi: TSh " + paymentNotice.price.toLocaleString("en-US") + "\\nNimetuma malipo kupitia Mixx by Yas kwenda 0717001506. Tafadhali thibitisheni malipo yangu.")}`}
-              target="_blank" rel="noopener noreferrer"
-              style={{ display: "block", textAlign: "center", textDecoration: "none", background: "#20c767", color: "#071b10", fontWeight: 800, padding: "15px 18px", borderRadius: 12, marginTop: 20 }}>
-              TUMA TAARIFA WHATSAPP
-            </a>
-            <button type="button" onClick={() => { setPaymentNotice(null); onClose(); }}
-              style={{ width: "100%", marginTop: 12, padding: 12, border: "1px solid #ffffff35", borderRadius: 10, background: "transparent", color: "#fff", fontWeight: 700 }}>
-              Funga
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
