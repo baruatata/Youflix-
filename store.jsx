@@ -42,12 +42,19 @@ export function StoreProvider({ children }) {
         me: u.id,
       }));
     };
+    const clearOldLocalLogin = () => {
+      if (alive) setState((s) => ({ ...s, users: [], me: null }));
+    };
     supabase.auth.getSession().then(({ data }) => {
-      if (data?.session?.user) syncUser(data.session.user);
+      if (data?.session?.user?.user_metadata?.account_method === "phone_password") {
+        syncUser(data.session.user);
+      } else {
+        clearOldLocalLogin();
+      }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) syncUser(session.user);
-      else if (event === "SIGNED_OUT" && alive) setState((s) => ({ ...s, me: null }));
+      if (session?.user?.user_metadata?.account_method === "phone_password") syncUser(session.user);
+      else if (event === "SIGNED_OUT" || event === "SIGNED_IN") clearOldLocalLogin();
     });
     return () => { alive = false; subscription.unsubscribe(); };
   }, []);
