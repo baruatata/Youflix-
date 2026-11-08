@@ -41,7 +41,17 @@ export default function Settings({ onLogin }) {
           </>
         )}
       </div>
-      <p className="help">Mipangilio ya akaunti na kifurushi inasimamiwa na Youflix. Unaweza kutazama video na kuangalia hali ya kifurushi chako.</p>
+      {me && active && (
+        <div className="set" style={{ marginTop: 14 }}>
+          <a className="btn" href="#change-package" style={{ display: "block", textAlign: "center", textDecoration: "none" }}>Badili Kifurushi</a>
+        </div>
+      )}
+      {me && !active && (
+        <div className="set" style={{ marginTop: 14 }}>
+          <a className="btn" href="#join" style={{ display: "block", textAlign: "center", textDecoration: "none" }}>Jiunge na Youflix</a>
+        </div>
+      )}
+      <p className="help">Hapa unaweza kuona kifurushi chako na muda uliobaki.</p>
     </>
   );
 }
