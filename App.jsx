@@ -11,7 +11,7 @@ import Home from "./Home.jsx";
 import Settings from "./Settings.jsx";
 import { useStore } from "./store.jsx";
 
-const ROUTES = ["home", "movies", "series", "mylist", "settings"];
+const ROUTES = ["home", "movies", "series", "settings"];
 const readRoute = () => {
   const r = (location.hash || "#home").slice(1);
   return ROUTES.includes(r) ? r : "home";
@@ -27,7 +27,7 @@ function useRoute() {
 }
 
 export default function App() {
-  const { state, t, videos, me, logout } = useStore();
+  const { t, videos, me, logout } = useStore();
   const route = useRoute();
   const [drawer, setDrawer] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -37,20 +37,11 @@ export default function App() {
   const [authOpen, setAuthOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
 
-  // Ukurasa ukibadilika: funga utafutaji na rudi juu
   useEffect(() => { setSearchOpen(false); setQuery(""); window.scrollTo(0, 0); }, [route]);
-
-  // Mandhari na Hifadhi Data
-  useEffect(() => {
-    document.body.classList.toggle("light", !!state.light);
-    document.body.classList.toggle("saver", !!state.saver);
-  }, [state.light, state.saver]);
-
   const playing = playingId ? videos.find((v) => v.id === playingId) : null;
   const overlay = !!playing || authOpen || adminOpen;
   useEffect(() => { document.body.style.overflow = overlay ? "hidden" : ""; }, [overlay]);
 
-  // Escape: funga kilicho juu kwanza
   useEffect(() => {
     const f = (e) => {
       if (e.key !== "Escape") return;
@@ -80,8 +71,6 @@ export default function App() {
     page = (<><h2 className="sec">{t("nav_movies")}</h2><Grid items={videos.filter((v) => v.type === "movie")} emptyMsg={t("nomovies")} onOpen={open} /></>);
   } else if (route === "series") {
     page = (<><h2 className="sec">{t("nav_series")}</h2><Grid items={videos.filter((v) => v.type === "series")} emptyMsg={t("noseries")} onOpen={open} /></>);
-  } else if (route === "mylist") {
-    page = (<><h2 className="sec">{t("nav_mylist")}</h2><Grid items={state.list.map((id) => videos.find((v) => v.id === id)).filter(Boolean)} emptyMsg={t("emptylist")} onOpen={open} /></>);
   } else if (route === "settings") {
     page = <Settings onLogin={() => setAuthOpen(true)} />;
   } else {
