@@ -1,5 +1,5 @@
-import { useStore } from "../lib/store";
-import { fmtPhone } from "../lib/utils";
+import { useStore } from "./store.jsx";
+import { fmtPhone } from "./utils.js";
 
 export default function Settings({ onLogin }) {
   const { state, update, t, notify, me, logout } = useStore();
