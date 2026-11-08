@@ -83,44 +83,20 @@ export default function Admin({ onClose }) {
     if (!r.submitted_by) return notify("Ombi hili halijaunganishwa na akaunti ya mteja.");
     if (r.payment_status === "paid" || r.status === "approved") return notify("Ombi hili tayari limeidhinishwa.");
     if (!window.confirm("Thibitisha kuwa umepokea malipo ya " + (r.price_tzs || 0) + " TSh kutoka kwa " + r.full_name + "?")) return;
-    const days = r.plan === "Siku" ? 1 : r.plan === "Wiki" ? 7 : 30;
-    const starts = new Date();
-    const ends = new Date(starts);
-    ends.setDate(ends.getDate() + days);
-    const isChangeRequest = r.admin_notes === "CHANGE_PLAN_REQUEST";
-    let subError = null;
-    if (isChangeRequest) {
-      const { data: currentSub, error: currentError } = await supabase.from("subscriptions")
-        .select("id").eq("user_id", r.submitted_by).eq("status", "active")
-        .gt("ends_at", new Date().toISOString()).order("created_at", { ascending: false })
-        .limit(1).maybeSingle();
-      if (currentError) return notify(currentError.message || "Imeshindikana kupata kifurushi cha sasa.");
-      if (currentSub) {
-        const { error } = await supabase.from("subscriptions").update({
-          request_id: r.id, plan: r.plan, starts_at: starts.toISOString(),
-          ends_at: ends.toISOString(), status: "active",
-        }).eq("id", currentSub.id);
-        subError = error;
-      } else {
-        const { error } = await supabase.from("subscriptions").insert({
-          request_id: r.id, user_id: r.submitted_by, plan: r.plan,
-          starts_at: starts.toISOString(), ends_at: ends.toISOString(), status: "active",
-        });
-        subError = error;
-      }
-    } else {
-      const { error } = await supabase.from("subscriptions").insert({
-        request_id: r.id, user_id: r.submitted_by, plan: r.plan,
-        starts_at: starts.toISOString(), ends_at: ends.toISOString(), status: "active",
+    try {
+      const { data, error } = await supabase.rpc("admin_approve_subscription_request", {
+        p_request_id: r.id,
       });
-      subError = error;
+      if (error) throw error;
+      if (!data?.ok) throw new Error("Ombi halikukamilika.");
+      const credit = Number(data.credit_awarded_tzs || 0);
+      notify(credit > 0
+        ? "Malipo yamethibitishwa. Kifurushi kimewashwa na TSh " + credit.toLocaleString("en-US") + " zimeongezwa kwenye Youflix Credit ya mteja."
+        : "Malipo yamethibitishwa na kifurushi kimewashwa. Historia ya kifurushi cha awali imehifadhiwa.");
+      loadRequests();
+    } catch (err) {
+      notify(err?.message || "Imeshindikana kuthibitisha malipo.");
     }
-    if (subError) return notify(subError.message || "Imeshindikana kuwasha kifurushi.");
-    const { error: reqError } = await supabase.from("subscription_requests")
-      .update({ payment_status: "paid", status: "approved" }).eq("id", r.id);
-    if (reqError) return notify("Kifurushi kimewashwa lakini ombi halikusasishwa: " + reqError.message);
-    notify("Malipo yamethibitishwa na kifurushi kimewashwa.");
-    loadRequests();
   };
 
 
