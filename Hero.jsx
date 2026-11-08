@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "./store.jsx";
 
-// Hero hutumia mabango yaliyochapishwa na admin kutoka Supabase.
+// Hero hutanguliza picha ya kwanza na kupakia mabango yote mapema ili yasichelewe kuonekana.
 export default function Hero() {
   const { promos } = useStore();
   const n = promos.length;
@@ -13,6 +13,18 @@ export default function Hero() {
     const id = setInterval(() => { if (!document.hidden) setI((k) => (k + 1) % n); }, 4500);
     return () => clearInterval(id);
   }, [n]);
+
+  useEffect(() => {
+    const first = promos[0]?.img;
+    if (!first) return undefined;
+    const link = document.createElement("link");
+    link.rel = "preload";
+    link.as = "image";
+    link.href = first;
+    link.fetchPriority = "high";
+    document.head.appendChild(link);
+    return () => link.remove();
+  }, [promos]);
 
   if (!n) return null;
   const cur = i % n;
@@ -27,8 +39,10 @@ export default function Hero() {
     <section className="hero" aria-roledescription="carousel"
       onTouchStart={(e) => { x0.current = e.touches[0].clientX; }} onTouchEnd={onEnd}>
       {promos.map((p, k) => (
-        <div key={p.id} className={"slide promo" + (k === cur ? " on" : "")} role="img" aria-label={p.alt || ""}
-          style={{ backgroundImage: p.img ? `url(${JSON.stringify(p.img)})` : "none" }} />
+        <div key={p.id} className={"slide promo" + (k === cur ? " on" : "")}>
+          {p.img && <img className="hero-image" src={p.img} alt={p.alt || ""}
+            loading="eager" fetchPriority={k === 0 ? "high" : "auto"} decoding="async" />}
+        </div>
       ))}
       {n > 1 && <div className="dots">{promos.map((p, k) => <b key={p.id} className={k === cur ? "on" : ""} />)}</div>}
     </section>
