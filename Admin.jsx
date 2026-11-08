@@ -90,9 +90,11 @@ export default function Admin({ onClose }) {
       if (error) throw error;
       if (!data?.ok) throw new Error("Ombi halikukamilika.");
       const credit = Number(data.credit_awarded_tzs || 0);
-      notify(credit > 0
-        ? "Malipo yamethibitishwa. Kifurushi kimewashwa na TSh " + credit.toLocaleString("en-US") + " zimeongezwa kwenye Youflix Credit ya mteja."
-        : "Malipo yamethibitishwa na kifurushi kimewashwa. Historia ya kifurushi cha awali imehifadhiwa.");
+      const used = Number(data.credit_used_tzs || 0);
+      const parts = ["Malipo yamethibitishwa na kifurushi kimewashwa."];
+      if (used > 0) parts.push("Youflix Credit iliyotumika: TSh " + used.toLocaleString("en-US") + ".");
+      if (credit > 0) parts.push("Salio jipya la kifurushi cha awali: TSh " + credit.toLocaleString("en-US") + ".");
+      notify(parts.join(" "));
       loadRequests();
     } catch (err) {
       notify(err?.message || "Imeshindikana kuthibitisha malipo.");
