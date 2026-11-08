@@ -2,7 +2,7 @@
 @font-face{font-family:"Ubuntu";font-weight:700;font-display:swap;
   src:local("Ubuntu Bold"),local("Ubuntu-Bold")}
 :root{--red:#E50914;--grad:linear-gradient(90deg,#e6197a,#f43f6e);--bg:#0b0b0b;--card:#181818;--tx:#fff;--mut:#a8a8a8;--r:10px;
-  --logo:url(/img/logo-h.png);--logo-stack:url(/img/logo.png)}
+  --logo:url(/logo-h.png);--logo-stack:url(/logo.png)}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{font-family:"Ubuntu",system-ui,Arial,sans-serif;font-weight:700;background:var(--bg);color:var(--tx)}
 body{min-height:100vh;padding:0 0 20px;line-height:1.4;touch-action:manipulation}
