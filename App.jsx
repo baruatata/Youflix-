@@ -12,7 +12,7 @@ import Settings from "./Settings.jsx";
 import Join from "./Join.jsx";
 import { useStore } from "./store.jsx";
 
-const ROUTES = ["home", "movies", "series", "settings", "join", "change-package"];
+const ROUTES = ["home", "movies", "series", "settings", "join"];
 const readRoute = () => {
   const r = (location.hash || "#home").slice(1);
   return ROUTES.includes(r) ? r : "home";
@@ -76,8 +76,6 @@ export default function App() {
     page = <Settings onLogin={() => setAuthOpen(true)} />;
   } else if (route === "join") {
     page = <Join onLogin={() => setAuthOpen(true)} mode="join" />;
-  } else if (route === "change-package") {
-    page = <Join onLogin={() => setAuthOpen(true)} mode="change" />;
   } else {
     page = <Home filt={filt} setFilt={setFilt} onOpen={open} />;
   }
