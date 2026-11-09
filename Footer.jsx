@@ -1,7 +1,6 @@
-import Icon from "./Icon";
 import { useStore } from "./store.jsx";
 
-export default function Footer({ onAdmin }) {
+export default function Footer() {
   const { t } = useStore();
   return (
     <footer className="foot">
