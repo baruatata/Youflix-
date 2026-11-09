@@ -43,7 +43,6 @@ export default function Join({ onLogin, mode = "join" }) {
         const { data, error } = await supabase.from("subscription_requests")
           .select("id,plan,price_tzs,credit_applied_tzs,admin_notes")
           .eq("submitted_by", me.id).eq("status", "pending")
-          .neq("payment_status", "paid")
           .order("created_at", { ascending: false }).limit(20);
         if (error) throw error;
         const matching = (data || []).find((row) => (row.admin_notes === "CHANGE_PLAN_REQUEST") === isChangeMode);
@@ -62,6 +61,7 @@ export default function Join({ onLogin, mode = "join" }) {
 
   const request = async () => {
     if (!me) return onLogin();
+    if (sent || pendingRequest) return;
     if (!supabase || busy) return;
     if (isChangeMode && !hasActivePlan) return notify("Huna kifurushi kinachoendelea cha kubadilisha.");
     if (!isChangeMode && hasActivePlan) return notify("Tumia sehemu ya Badili Kifurushi.");
@@ -146,9 +146,6 @@ export default function Join({ onLogin, mode = "join" }) {
               TUMA TAARIFA WHATSAPP
             </a>
           </div>
-          <button className="btn ghost" type="button" style={{ marginTop: 14 }} onClick={() => setSent(false)}>
-            {isChangeMode ? "Hariri Ombi" : "Angalia Ombi"}
-          </button>
           <p className="help">Huduma kwa wateja: WhatsApp +255717001506.</p>
         </div>
       ) : (
