@@ -6,7 +6,6 @@ export default function Footer({ onAdmin }) {
   return (
     <footer className="foot">
       <div className="frow">
-        <button className="lock" aria-label="Admin" onClick={onAdmin}><Icon name="lock" /></button>
         <span className="brand" role="img" aria-label="Youflix" />
       </div>
       <p className="ft">{t("foot_tag")}</p>
