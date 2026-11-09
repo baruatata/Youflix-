@@ -41,11 +41,6 @@ export default function Settings({ onLogin }) {
           </>
         )}
       </div>
-      {me && active && (
-        <div className="set" style={{ marginTop: 14 }}>
-          <a className="btn" href="#change-package" style={{ display: "block", textAlign: "center", textDecoration: "none" }}>Badili Kifurushi</a>
-        </div>
-      )}
       {me && !active && (
         <div className="set" style={{ marginTop: 14 }}>
           <a className="btn" href="#join" style={{ display: "block", textAlign: "center", textDecoration: "none" }}>Jiunge na Youflix</a>
