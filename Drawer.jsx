@@ -47,9 +47,6 @@ export default function Drawer({ open, onClose, route, filt, onCategory, onSearc
           <a href="#settings" className={route === "settings" ? "on" : ""} onClick={onClose}>
             <Icon name="user" /><span>Kifurushi Changu</span>
           </a>
-          <a href="#change-package" className={route === "change-package" ? "on" : ""} onClick={onClose}>
-            <Icon name="refresh-cw" /><span>Badili Kifurushi</span>
-          </a>
           <a href="#" onClick={(e) => { e.preventDefault(); onClose(); me ? logout() : onLogin(); }}>
             <Icon name="user" /><span>{me ? me.name + " · " + t("a_logout") : t("login")}</span>
           </a>
