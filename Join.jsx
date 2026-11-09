@@ -45,7 +45,7 @@ export default function Join({ onLogin, mode = "join" }) {
           .eq("submitted_by", me.id).eq("status", "pending")
           .order("created_at", { ascending: false }).limit(20);
         if (error) throw error;
-        const matching = (data || []).find((row) => (row.admin_notes === "CHANGE_PLAN_REQUEST") === isChangeMode);
+        const matching = (data || [])[0] || null;
         if (alive && matching) {
           setPendingRequest(matching);
           setPlan(matching.plan || "Siku");
