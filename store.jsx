@@ -68,8 +68,8 @@ export function StoreProvider({ children }) {
   useEffect(() => {
     if (!supabase) return;
     let alive = true;
-    supabase.from("media_catalog")
-      .select("id,title,category,release_year,duration,genre,description,poster_url,featured,published")
+    supabase.from("media")
+      .select("id,title,category,release_year,duration,genre,description,poster_url,featured,published,video_url")
       .eq("published", true)
       .order("created_at", { ascending: false })
       .then(({ data, error }) => {
