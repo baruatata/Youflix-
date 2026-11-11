@@ -1,7 +1,7 @@
 // Vifaa vya msaada visivyotegemea React.
 
 export function ytId(u) {
-  const m = String(u || "").match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/);
+  const m = String(u || "").match(/(?:youtu\\.be\\/|v=|embed\\/|shorts\\/)([\\w-]{11})/);
   return m ? m[1] : null;
 }
 
@@ -18,7 +18,7 @@ export function posterStyle(v, saver) {
   return { backgroundImage: `linear-gradient(160deg,hsl(${h},60%,28%),hsl(${(h + 40) % 360},70%,10%))` };
 }
 
-// Normalize old genre names and Nyaraka to the four official genres.
+// Normalize old genre names and database categories to the four official genres.
 export function canonicalGenre(value) {
  const s = String(value || "").trim().toLowerCase();
  if (/tamthilia|thamthilia|mfululizo|drama/.test(s)) return "Tamthilia";
@@ -30,12 +30,13 @@ export function canonicalGenre(value) {
 
 // Chips / makundi
 const RX = {
-  drama: /tamthilia|thamthilia|drama/i,
+  drama: /tamthilia|thamthilia|mfululizo|drama/i,
   movie: /filamu|movie/i,
   mawaidha: /mawaidha|mahubiri|nasaha|hadithi|nyaraka|documentary/i,
   comedy: /vichekesho|comedy/i,
 };
 export function filterVideos(videos, filt) {
+  if (filt === "drama") return videos.filter((x) => canonicalGenre(x.genre) === "Tamthilia");
   if (RX[filt]) return videos.filter((x) => RX[filt].test(x.genre || ""));
   return videos;
 }
@@ -55,17 +56,17 @@ export const newSalt = () => Math.random().toString(36).slice(2) + Date.now().to
 
 // 0712 345 678 | 712345678 | +255712345678  →  "255712345678"
 export function normPhone(raw) {
-  let d = String(raw).replace(/\D/g, "");
+  let d = String(raw).replace(/\\D/g, "");
   if (d.indexOf("255") === 0 && d.length > 9) d = d.slice(3);
   if (d.charAt(0) === "0") d = d.slice(1);
   return d.length === 9 ? "255" + d : "";
 }
 export function fmtPhone(c) {
-  const m = /^255(\d{3})(\d{3})(\d{3})$/.exec(c || "");
+  const m = /^255(\\d{3})(\\d{3})(\\d{3})$/.exec(c || "");
   return m ? `+255 ${m[1]} ${m[2]} ${m[3]}` : String(c || "");
 }
 
-export const okImg = (s) => typeof s === "string" && /^(https?:\/\/|data:image\/(jpeg|png|webp);base64,)/i.test(s);
+export const okImg = (s) => typeof s === "string" && /^(https?:\\/\\/|data:image\\/(jpeg|png|webp);base64,)/i.test(s);
 
 // Punguza picha iliyochaguliwa kuwa JPEG nyepesi (data URL)
 export function readImage(file, maxW, cb) {
