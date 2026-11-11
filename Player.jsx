@@ -72,8 +72,8 @@ export default function Player({ video, onClose }) {
       const stored = String(data?.video_url || "").trim();
       if (!stored) throw new Error("Video haijapatikana.");
 
-      const muxUrl = stored.match(/^https?:\\/\\/stream\\.mux\\.com\\/([^/?#]+?)(?:\\.m3u8)?(?:\\?([^#]*))?$/i);
-      const isMux = !!muxUrl || (!/^https?:\\/\\//i.test(stored) && !ytId(stored));
+      const muxUrl = stored.match(/^https?:\/\/stream\.mux\.com\/([^/?#]+?)(?:\.m3u8)?(?:\?([^#]*))?$/i);
+      const isMux = !!muxUrl || (!/^https?:\/\//i.test(stored) && !ytId(stored));
       if (isMux) {
         const playbackId = muxUrl ? decodeURIComponent(muxUrl[1]) : stored;
         if (!playbackId) throw new Error("Mux Playback ID haipo.");
