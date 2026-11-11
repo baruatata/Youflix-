@@ -72,23 +72,20 @@ export default function Player({ video, onClose }) {
       const stored = String(data?.video_url || "").trim();
       if (!stored) throw new Error("Video haijapatikana.");
 
-      const muxUrl = stored.match(/^https?:\/\/stream\.mux\.com\/([^/?#]+?)(?:\.m3u8)?(?:\?([^#]*))?$/i);
-      if (muxUrl) {
-        const playbackId = decodeURIComponent(muxUrl[1]);
-        const query = new URLSearchParams(muxUrl[2] || "");
-        const token = query.get("token") || "";
+      const muxUrl = stored.match(/^https?:\\/\\/stream\\.mux\\.com\\/([^/?#]+?)(?:\\.m3u8)?(?:\\?([^#]*))?$/i);
+      const isMux = !!muxUrl || (!/^https?:\\/\\//i.test(stored) && !ytId(stored));
+      if (isMux) {
+        const playbackId = muxUrl ? decodeURIComponent(muxUrl[1]) : stored;
         if (!playbackId) throw new Error("Mux Playback ID haipo.");
-        setMuxPlaybackId(playbackId);
-        setMuxPlaybackToken(token);
-      } else if (!/^https?:\/\//i.test(stored) && !ytId(stored)) {
-        const { data: signed, error: tokenError } = await supabase.functions.invoke("mux-admin", {
-          body: { action: "get-playback-token", playback_id: stored },
+        // Omba ruhusa mpya kwa kila aina ya Mux URL: public na signed.
+        const { data: playback, error: tokenError } = await supabase.functions.invoke("mux-admin", {
+          body: { action: "get-playback-token", playback_id: playbackId },
         });
-        if (tokenError) throw new Error(signed?.error || tokenError.message || "Imeshindikana kuthibitisha ruhusa ya video.");
-        if (signed?.error) throw new Error(signed.error);
-        if (!signed?.playback_token) throw new Error("Mux haijatoa token salama ya video.");
-        setMuxPlaybackId(stored);
-        setMuxPlaybackToken(signed.playback_token);
+        if (tokenError) throw new Error(playback?.error || tokenError.message || "Imeshindikana kuthibitisha ruhusa ya video.");
+        if (playback?.error) throw new Error(playback.error);
+        if (!playback?.playback_id) throw new Error("Mux haijarudisha Playback ID.");
+        setMuxPlaybackId(playback.playback_id);
+        setMuxPlaybackToken(playback.playback_token || "");
       } else {
         // YouTube na vyanzo vingine vya nje vinaendelea kutumia player ya awali.
         setVideoSrc(stored);
