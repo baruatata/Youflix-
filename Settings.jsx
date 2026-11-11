@@ -9,7 +9,24 @@ const dateText = (value) => {
 };
 
 export default function Settings({ onLogin }) {
-  const { t, me, logout, state } = useStore();
+  const { t, me, logout, state, notify } = useStore();
+  const [cacheBusy, setCacheBusy] = useState(false);
+
+  const clearYouflixCache = async () => {
+    if (cacheBusy) return;
+    setCacheBusy(true);
+    try {
+      if ("caches" in window) {
+        const keys = await window.caches.keys();
+        await Promise.all(keys.filter((key) => key.startsWith("youflix-react-")).map((key) => window.caches.delete(key)));
+      }
+      notify("Cache ya Youflix imesafishwa. Inasasisha maudhui...");
+      window.location.reload();
+    } catch (error) {
+      setCacheBusy(false);
+      notify("Imeshindikana kusafisha cache. Tafadhali jaribu tena.");
+    }
+  };
   const sub = state.subscription;
   const [now, setNow] = useState(Date.now());
 
@@ -78,6 +95,15 @@ export default function Settings({ onLogin }) {
         </div>
       )}
       <p className="help">Hapa unaweza kuona kifurushi chako na muda uliobaki.</p>
+
+      <h2 className="sec">Sasisha Youflix</h2>
+      <div className="set">
+        <p className="help">Ikiwa picha za matangazo au mabango ya Hero hazijasasishwa, safisha cache ili Youflix ipakue taarifa mpya.</p>
+        <button className="btn" type="button" onClick={clearYouflixCache} disabled={cacheBusy}>
+          {cacheBusy ? "Inasafisha..." : "Safisha Cache na Sasisha"}
+        </button>
+        <p className="help">Haitafuta akaunti, vifurushi, historia au video zako.</p>
+      </div>
     </>
   );
 }
