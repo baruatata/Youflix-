@@ -107,39 +107,45 @@ export default function NotificationCenter() {
 
   const allItems = expiryNotice ? [expiryNotice, ...items] : items;
   const unread = allItems.filter((item) => !item.read_at).length;
+  const messageCard = (item) => (
+    <div key={item.id} style={{
+      width: "100%", boxSizing: "border-box", padding: 16, marginBottom: 10,
+      border: "1px solid #ffffff20", borderRadius: 12,
+      background: item.read_at ? "transparent" : "#e5091418",
+      color: "inherit", textAlign: "center", overflowWrap: "anywhere", wordBreak: "normal"
+    }}>
+      <button type="button" onClick={() => markRead(item)}
+        style={{ display: "block", width: "100%", padding: 0, border: 0, background: "transparent", color: "inherit", cursor: "pointer", textAlign: "center", whiteSpace: "normal", overflowWrap: "anywhere" }}>
+        <b style={{ display: "block", fontSize: 15, lineHeight: 1.4 }}>{item.title}</b>
+        <span style={{ display: "block", fontSize: 14, lineHeight: 1.6, marginTop: 8, whiteSpace: "normal", overflowWrap: "anywhere" }}>{item.message}</span>
+        <small style={{ display: "block", color: "var(--mut)", marginTop: 10 }}>{new Date(item.created_at).toLocaleString("sw-TZ")}{!item.read_at ? " · Mpya" : " · Imesomwa"}</small>
+      </button>
+      {item.local && <a href="#join" onClick={() => setOpen(false)} style={{ display: "inline-block", color: "#ff5963", marginTop: 12, fontSize: 14, fontWeight: 700 }}>JIUNGE UPYA</a>}
+    </div>
+  );
+
   return (
-    <div style={{ position: "relative" }}>
+    <>
       <button className="icon-btn" type="button" aria-label="Ujumbe mpya" onClick={toggle} style={{ position: "relative" }}>
         <Icon name="bell" />
         {unread > 0 && <span style={{ position: "absolute", top: 1, right: 1, minWidth: 16, height: 16, borderRadius: 20, background: "#e50914", color: "#fff", fontSize: 10, lineHeight: "16px", textAlign: "center", padding: "0 3px" }}>{unread > 9 ? "9+" : unread}</span>}
       </button>
       {open && (
-        <div style={{ position: "absolute", right: 0, top: "calc(100% + 10px)", width: "min(340px, calc(100vw - 24px))", maxHeight: "65vh", overflowY: "auto", zIndex: 1000, background: "var(--card)", color: "var(--tx)", border: "1px solid #ffffff22", borderRadius: 12, boxShadow: "0 12px 35px #0009", padding: 12 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <b>Ujumbe wa Youflix</b>
-            <button type="button" className="btn ghost" onClick={() => setOpen(false)}>Funga</button>
-          </div>
-          {expiryNotice && (
-            <button type="button" onClick={() => markRead(expiryNotice)}
-              style={{ display: "block", width: "100%", textAlign: "left", padding: 10, marginBottom: 7, border: 0, borderRadius: 9, background: expiryNotice.read_at ? "transparent" : "#e5091420", color: "inherit", cursor: "pointer" }}>
-              <b style={{ display: "block", fontSize: 13 }}>{expiryNotice.title}</b>
-              <span style={{ display: "block", fontSize: 13, whiteSpace: "normal", marginTop: 4 }}>{expiryNotice.message}</span>
-              <small style={{ color: "var(--mut)" }}>{new Date(expiryNotice.created_at).toLocaleString("sw-TZ")}{!expiryNotice.read_at ? " · Mpya" : " · Imesomwa"}</small>
-              <a href="#join" onClick={(e) => { e.stopPropagation(); setOpen(false); }} style={{ display: "inline-block", color: "#ff5963", marginTop: 7, fontSize: 13 }}>Jiunge upya</a>
-            </button>
-          )}
-          {busy && <p className="help">Inapakia...</p>}
-          {!busy && allItems.length === 0 && <p className="help">Bado hujapokea ujumbe.</p>}
-          {items.map((item) => (
-            <button key={item.id} type="button" onClick={() => markRead(item)}
-              style={{ display: "block", width: "100%", textAlign: "left", padding: 10, marginBottom: 7, border: 0, borderRadius: 9, background: item.read_at ? "transparent" : "#e5091420", color: "inherit", cursor: "pointer" }}>
-              <b style={{ display: "block", fontSize: 13 }}>{item.title}</b>
-              <span style={{ display: "block", fontSize: 13, whiteSpace: "normal", marginTop: 4 }}>{item.message}</span>
-              <small style={{ color: "var(--mut)" }}>{new Date(item.created_at).toLocaleString("sw-TZ")}{!item.read_at ? " · Mpya" : ""}</small>
-            </button>
-          ))}
+        <div role="presentation" onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
+          style={{ position: "fixed", inset: 0, zIndex: 3000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, boxSizing: "border-box", background: "#000b" }}>
+          <section role="dialog" aria-modal="true" aria-label="Ujumbe wa Youflix"
+            style={{ position: "relative", width: "min(440px, 100%)", maxHeight: "min(78vh, 620px)", overflowY: "auto", boxSizing: "border-box", margin: "auto", padding: 18, border: "1px solid #ffffff24", borderRadius: 16, background: "var(--card)", color: "var(--tx)", boxShadow: "0 18px 55px #000c", textAlign: "center" }}>
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", position: "relative", marginBottom: 16, minHeight: 36 }}>
+              <b style={{ fontSize: 17 }}>Ujumbe wa Youflix</b>
+              <button type="button" className="btn ghost" aria-label="Funga ujumbe" onClick={() => setOpen(false)} style={{ position: "absolute", right: 0, top: 0, padding: "6px 10px" }}>✕</button>
+            </div>
+            {busy && <p className="help">Inapakia...</p>}
+            {!busy && allItems.length === 0 && <p className="help" style={{ textAlign: "center" }}>Bado hujapokea ujumbe.</p>}
+            {expiryNotice && messageCard(expiryNotice)}
+            {items.map(messageCard)}
+          </section>
         </div>
       )}
-    </div>
+    </>
   );
 }
