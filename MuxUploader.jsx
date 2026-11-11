@@ -31,7 +31,7 @@ export default function MuxUploader({ notify, onSaved }) {
     if (cover.size > 8 * 1024 * 1024) return notify("Picha ya cover isizidi MB 8.");
     if (!title.trim()) return notify("Weka jina la video.");
     if (busy) return;
-    setBusy(true); setProgress(0); setStatus("Inaandaa upload ya Public Playback...");
+    setBusy(true); setProgress(0); setStatus("Inaandaa upload salama ya video...");
     try {
       const created = await invoke("create-upload");
       setStatus("Inatuma video kwenda Mux...");
@@ -69,8 +69,8 @@ export default function MuxUploader({ notify, onSaved }) {
         }
       }
       if (!result?.media?.id) throw new Error("Video bado inachakatwa. Jaribu tena baada ya dakika chache.");
-      setStatus("Video imehifadhiwa kwa Public Playback. Inasubiri kuchapishwa na Admin.");
-      notify("Video imepakiwa kwa Public Playback; ichapishe kupitia Admin baada ya ukaguzi.");
+      setStatus("Video imehifadhiwa kwa Signed Playback. Inasubiri kuchapishwa na Admin.");
+      notify("Video imepakiwa kwa Signed Playback; ichapishe kupitia Admin baada ya ukaguzi.");
       setTitle(""); setDescription(""); setProgress(0); setCoverFile(null); form.reset(); onSaved?.();
     } catch (error) {
       notify(error?.message || "Imeshindikana kupakia video.");
