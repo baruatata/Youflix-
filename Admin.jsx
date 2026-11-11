@@ -246,6 +246,16 @@ export default function Admin({ onClose }) {
     if (edit === id) setEdit(null);
   };
 
+  const makePublic = async (video) => {
+    if (!supabase) return notify("Supabase haijaunganishwa.");
+    if (!window.confirm("Badili video ya " + video.title + " kuwa Public Playback ID? URL yake itaweza kufunguliwa nje ya Youflix pia.")) return;
+    try {
+      const { data, error } = await supabase.functions.invoke("mux-admin", { body: { action: "make-public", media_id: video.id } });
+      if (error) throw new Error(data?.error || error.message);
+      if (data?.error) throw new Error(data.error);
+      notify(data.already_public ? "Video tayari inatumia Public ID." : "Public Playback ID imewekwa kwa " + video.title + ".");
+    } catch (err) { notify(err?.message || "Imeshindikana kuweka Public ID."); }
+  };
   const videosTab = (
     <>
       <MuxUploader notify={notify} onSaved={() => window.location.reload()} />
@@ -282,6 +292,7 @@ export default function Admin({ onClose }) {
             <b>{c.title}</b>
             <small>{[c.type === "series" ? t("k_series") : t("k_movie"), c.genre, c.year].filter(Boolean).join(" • ")}</small>
           </span>
+          <button className="btn ghost" onClick={() => makePublic(c)}>Public ID</button>
           <button className="btn ghost" onClick={() => startEdit(c)}>{t("ad_edit")}</button>
           <button className="btn ghost" onClick={() => delVideo(c.id)}>{t("del")}</button>
         </div>
