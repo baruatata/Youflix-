@@ -64,14 +64,8 @@ export default function Player({ video, onClose }) {
       if (!stored) throw new Error("Video haijapatikana.");
 
       if (!/^https?:\/\//i.test(stored) && !ytId(stored)) {
-        const { data: signed, error: tokenError } = await supabase.functions.invoke("mux-admin", {
-          body: { action: "get-playback-token", playback_id: stored },
-        });
-        if (tokenError) throw new Error(signed?.error || tokenError.message || "Imeshindikana kupata ruhusa ya video.");
-        if (!signed?.playback_token || !signed?.thumbnail_token) throw new Error(signed?.error || "Mux haijatoa token zote za video.");
-        // Tumia HLS URL ya Mux moja kwa moja kupitia HTML5 video.
-        // Safari/iPhone ina HLS support ya ndani kama video nyingine za kawaida.
-        setVideoSrc(`https://stream.mux.com/${encodeURIComponent(stored)}.m3u8?token=${encodeURIComponent(signed.playback_token)}`);
+        // Public Playback ID: HLS ya Mux inachezwa moja kwa moja bila signed token.
+        setVideoSrc(`https://stream.mux.com/${encodeURIComponent(stored)}.m3u8`);
       } else {
         setVideoSrc(stored);
       }
