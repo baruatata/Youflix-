@@ -34,37 +34,53 @@ export function StoreProvider({ children }) {
   }, []);
   const t = useCallback((k) => (T[state.lang] && T[state.lang][k]) || T.sw[k] || k, [state.lang]);
 
-  // Rejesha akaunti na taarifa za kifurushi kutoka Supabase.
+  // Akaunti na kifurushi hutambuliwa kwa Supabase Auth ID, si user_metadata
+  // inayoweza kukosekana au kutofautiana kati ya njia za kuingia.
   useEffect(() => {
     if (!supabase) return;
     let alive = true;
+    let syncSequence = 0;
     const syncUser = async (user) => {
+      const sequence = ++syncSequence;
       if (!alive) return;
-      if (!user || user.user_metadata?.account_method !== "phone_password") {
+      if (!user) {
         setState((s) => ({ ...s, users: [], me: null, subscription: null }));
         return;
       }
       const u = {
         id: user.id,
-        name: user.user_metadata.full_name || "Mteja",
-        contact: user.user_metadata.phone || "",
+        name: user.user_metadata?.full_name || "Mteja",
+        contact: user.user_metadata?.phone || user.phone || "",
       };
       setState((s) => ({ ...s, users: [...(s.users || []).filter((x) => x.id !== u.id), u], me: u.id }));
-      const { data } = await supabase.from("subscriptions")
+
+      const now = new Date().toISOString();
+      const { data, error } = await supabase.from("subscriptions")
         .select("id,plan,starts_at,ends_at,status")
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(1);
-      if (alive) setState((s) => ({ ...s, subscription: Array.isArray(data) && data.length ? data[0] : null }));
+        .eq("status", "active")
+        .lte("starts_at", now)
+        .gt("ends_at", now)
+        .order("ends_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!alive || sequence !== syncSequence) return;
+      if (error) {
+        console.error("Youflix subscription load failed:", error);
+        setState((s) => ({ ...s, subscription: null }));
+        return;
+      }
+      setState((s) => ({ ...s, subscription: data || null }));
     };
     supabase.auth.getSession().then(({ data }) => syncUser(data?.session?.user || null));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       syncUser(session?.user || null);
     });
-    return () => { alive = false; subscription.unsubscribe(); };
+    return () => { alive = false; syncSequence++; subscription.unsubscribe(); };
   }, []);
 
-  // Pakua video zote zilizochapishwa kutoka jedwali la media_catalog.
+  // Pakua video zote zilizochapishwa kutoka jedwali la media.
   useEffect(() => {
     if (!supabase) return;
     let alive = true;
