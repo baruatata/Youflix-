@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import MuxPlayer from "@mux/mux-player-react";
 import { useStore } from "./store.jsx";
 import { ytId } from "./utils.js";
 import { supabase } from "./supabase.js";
@@ -88,7 +89,19 @@ export default function Player({ video, onClose }) {
     : "Video hii inahitaji kifurushi hai kilicholipiwa na kuthibitishwa na Admin."}</p><button className="btn" onClick={() => { onClose(); location.hash = "#join"; }}>Jiunge na kifurushi</button></div>;
   else if (!started) stage = <button className="big" aria-label={t("play")} disabled={loading} onClick={beginPlayback}>{loading ? "..." : "▶"}</button>;
   else if (yt) stage = <iframe title={video.title} allow="autoplay; fullscreen; encrypted-media" allowFullScreen src={`https://www.youtube-nocookie.com/embed/${yt}?autoplay=1&rel=0`} />;
-  else stage = <video ref={(v) => { if (v) el.current = v; }} src={videoSrc} controls autoPlay playsInline preload="none" onLoadedMetadata={onMeta} onTimeUpdate={onTime} onError={() => notify(t("videoerr"))} />;
+  else if (/^https?:\/\//i.test(videoSrc)) stage = <MuxPlayer
+    ref={el}
+    src={videoSrc}
+    streamType="on-demand"
+    autoPlay
+    playsInline
+    preload="none"
+    onLoadedMetadata={onMeta}
+    onTimeUpdate={onTime}
+    onError={() => notify(t("videoerr"))}
+    style={{ width: "100%", height: "100%", aspectRatio: "16 / 9" }}
+  />;
+  else stage = <video ref={el} src={videoSrc} controls autoPlay playsInline preload="none" onLoadedMetadata={onMeta} onTimeUpdate={onTime} onError={() => notify(t("videoerr"))} />;
 
   return <div id="player" className="player"><div className="player-box">
     <button className="close" aria-label={t("close")} onClick={onClose}>✕</button>
