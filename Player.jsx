@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import MuxPlayer from "@mux/mux-player-react";
 import { useStore } from "./store.jsx";
 import { ytId } from "./utils.js";
 import { supabase } from "./supabase.js";
@@ -7,6 +8,8 @@ export default function Player({ video, onClose }) {
   const { state, update, t, notify } = useStore();
   const [started, setStarted] = useState(false);
   const [videoSrc, setVideoSrc] = useState("");
+  const [muxPlaybackId, setMuxPlaybackId] = useState("");
+  const [muxPlaybackToken, setMuxPlaybackToken] = useState("");
   const [locked, setLocked] = useState(false);
   const [loading, setLoading] = useState(false);
   const [clock, setClock] = useState(Date.now());
@@ -28,6 +31,8 @@ export default function Player({ video, onClose }) {
     if (activePackage || !started) return;
     setStarted(false);
     setVideoSrc("");
+    setMuxPlaybackId("");
+    setMuxPlaybackToken("");
     setLocked(true);
     if (el.current) { el.current.pause(); el.current.removeAttribute("src"); el.current.load(); }
     notify("Muda wa kifurushi chako umeisha. Tafadhali jiunge upya ili kuendelea kutazama.");
@@ -57,6 +62,8 @@ export default function Player({ video, onClose }) {
     if (loading) return;
     setLoading(true);
     setLocked(false);
+    setMuxPlaybackId("");
+    setMuxPlaybackToken("");
     try {
       const { data, error } = await supabase.from("media").select("video_url").eq("id", video.id).single();
       if (error) throw error;
@@ -69,8 +76,9 @@ export default function Player({ video, onClose }) {
         });
         if (tokenError) throw new Error(signed?.error || tokenError.message || "Imeshindikana kuthibitisha ruhusa ya video.");
         if (signed?.error) throw new Error(signed.error);
-        if (!signed?.playback_token) throw new Error("Mux haijatoa token salama ya video.");
-        setVideoSrc(`https://stream.mux.com/${encodeURIComponent(stored)}.m3u8?token=${encodeURIComponent(signed.playback_token)}`);
+        // Mux supports both signed playback (token present) and public playback (no token).
+        setMuxPlaybackId(stored);
+        setMuxPlaybackToken(signed?.playback_token || "");
       } else {
         // Viungo vya YouTube/vyanzo vya nje vinabaki na tabia yake ya awali.
         setVideoSrc(stored);
@@ -88,6 +96,7 @@ export default function Player({ video, onClose }) {
     : "Video hii inahitaji kifurushi hai kilicholipiwa na kuthibitishwa na Admin."}</p><button className="btn" onClick={() => { onClose(); location.hash = "#join"; }}>Jiunge na kifurushi</button></div>;
   else if (!started) stage = <button className="big" aria-label={t("play")} disabled={loading} onClick={beginPlayback}>{loading ? "..." : "▶"}</button>;
   else if (yt) stage = <iframe title={video.title} allow="autoplay; fullscreen; encrypted-media" allowFullScreen src={`https://www.youtube-nocookie.com/embed/${yt}?autoplay=1&rel=0`} />;
+  else if (muxPlaybackId) stage = <MuxPlayer playbackId={muxPlaybackId} tokens={muxPlaybackToken ? { playback: muxPlaybackToken } : undefined} streamType="on-demand" autoPlay playsInline preload="none" accentColor="#f97316" style={{ width: "100%", height: "100%", aspectRatio: "16 / 9" }} onError={() => notify(t("videoerr"))} />;
   else stage = <video ref={(v) => { if (v) el.current = v; }} src={videoSrc} controls autoPlay playsInline preload="none" onLoadedMetadata={onMeta} onTimeUpdate={onTime} onError={() => notify(t("videoerr"))} />;
 
   return <div id="player" className="player"><div className="player-box">
