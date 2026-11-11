@@ -108,7 +108,12 @@ export default function Player({ video, onClose }) {
     playsInline
     accentColor="#f97316"
     metadata={{ video_id: video.id, video_title: video.title, viewer_user_id: String(state.me || "") }}
-    onError={() => notify("Mux imeshindwa kufungua video. Tafadhali jaribu tena.")} />;
+    onError={(event) => {
+      const detail = event?.detail || {};
+      const message = detail?.message || detail?.data?.message || detail?.type || "Hitilafu ya Mux isiyojulikana";
+      const code = detail?.code || detail?.data?.code;
+      notify(`Mux: ${message}${code ? ` (code ${code})` : ""}`);
+    }} />;
   else if (yt) stage = <iframe title={video.title} allow="autoplay; fullscreen; encrypted-media" allowFullScreen src={`https://www.youtube-nocookie.com/embed/${yt}?autoplay=1&rel=0`} />;
   else stage = <video ref={(v) => { if (v) el.current = v; }} src={videoSrc} controls autoPlay playsInline preload="none" onLoadedMetadata={onMeta} onTimeUpdate={onTime} onError={() => notify(t("videoerr"))} />;
 
