@@ -10,6 +10,7 @@ export default function Player({ video, onClose }) {
   const [videoSrc, setVideoSrc] = useState("");
   const [muxPlaybackId, setMuxPlaybackId] = useState("");
   const [playbackToken, setPlaybackToken] = useState("");
+  const [thumbnailToken, setThumbnailToken] = useState("");
   const [locked, setLocked] = useState(false);
   const [loading, setLoading] = useState(false);
   const [clock, setClock] = useState(Date.now());
@@ -33,6 +34,7 @@ export default function Player({ video, onClose }) {
     setVideoSrc("");
     setMuxPlaybackId("");
     setPlaybackToken("");
+    setThumbnailToken("");
     setLocked(true);
     if (el.current) { el.current.pause(); el.current.removeAttribute("src"); el.current.load(); }
     notify("Muda wa kifurushi chako umeisha. Tafadhali jiunge upya ili kuendelea kutazama.");
@@ -73,14 +75,16 @@ export default function Player({ video, onClose }) {
           body: { action: "get-playback-token", playback_id: stored },
         });
         if (tokenError) throw new Error(signed?.error || tokenError.message || "Imeshindikana kupata ruhusa ya video.");
-        if (!signed?.playback_token) throw new Error(signed?.error || "Mux haijatoa token ya video.");
+        if (!signed?.playback_token || !signed?.thumbnail_token) throw new Error(signed?.error || "Mux haijatoa token zote za video.");
         // Mux Player hupokea signed token kama token ya playback, si kama URL ya video.
         setVideoSrc("");
         setMuxPlaybackId(stored);
         setPlaybackToken(signed.playback_token);
+        setThumbnailToken(signed.thumbnail_token);
       } else {
         setMuxPlaybackId("");
         setPlaybackToken("");
+        setThumbnailToken("");
         setVideoSrc(stored);
       }
       setStarted(true);
@@ -98,7 +102,7 @@ export default function Player({ video, onClose }) {
   else if (muxPlaybackId) stage = <MuxPlayer
     key={muxPlaybackId}
     playbackId={muxPlaybackId}
-    tokens={{ playback: playbackToken }}
+    tokens={{ playback: playbackToken, thumbnail: thumbnailToken }}
     streamType="on-demand"
     autoPlay
     playsInline
