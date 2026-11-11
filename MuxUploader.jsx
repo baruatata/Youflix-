@@ -31,7 +31,7 @@ export default function MuxUploader({ notify, onSaved }) {
     if (cover.size > 8 * 1024 * 1024) return notify("Picha ya cover isizidi MB 8.");
     if (!title.trim()) return notify("Weka jina la video.");
     if (busy) return;
-    setBusy(true); setProgress(0); setStatus("Inaandaa upload yenye Public Playback...");
+    setBusy(true); setProgress(0); setStatus("Inaandaa upload ya Public Playback...");
     try {
       const created = await invoke("create-upload");
       setStatus("Inatuma video kwenda Mux...");
@@ -70,7 +70,7 @@ export default function MuxUploader({ notify, onSaved }) {
       }
       if (!result?.media?.id) throw new Error("Video bado inachakatwa. Jaribu tena baada ya dakika chache.");
       setStatus("Video imehifadhiwa kwa Public Playback. Inasubiri kuchapishwa na Admin.");
-      notify("Video imepakiwa kwa ulinzi wa Public Playback; ichapishe kupitia Admin baada ya ukaguzi.");
+      notify("Video imepakiwa kwa Public Playback; ichapishe kupitia Admin baada ya ukaguzi.");
       setTitle(""); setDescription(""); setProgress(0); setCoverFile(null); form.reset(); onSaved?.();
     } catch (error) {
       notify(error?.message || "Imeshindikana kupakia video.");
@@ -80,7 +80,7 @@ export default function MuxUploader({ notify, onSaved }) {
 
   return <section className="form" style={{ marginBottom: 22, padding: 14, border: "1px solid rgba(255,255,255,.14)", borderRadius: 12 }}>
     <h2 className="sec">Pakia video kutoka simu (Mux)</h2>
-    <p className="help">Video itatumwa Mux kwa Public Playback ili ihitaji token halali ya Youflix kutazamwa.</p>
+    <p className="help">Video itatumwa Mux kwa Public Playback. Mteja ataicheza kupitia Youflix baada ya uthibitisho wa kifurushi.</p>
     <form onSubmit={upload}>
       <label>Jina la video<input value={title} onChange={(e) => setTitle(e.target.value)} required maxLength={80} /></label>
       <label>Aina ya video<select value={genre} onChange={(e) => setGenre(e.target.value)}>{GENRES.map((g) => <option key={g} value={g}>{g}</option>)}</select></label>
