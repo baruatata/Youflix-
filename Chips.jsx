@@ -1,5 +1,3 @@
-import { useStore } from "./store.jsx";
-
 const L = [
   ["all", "Video zote"],
   ["drama", "Tamthilia"],
@@ -8,9 +6,7 @@ const L = [
   ["comedy", "Vichekesho"],
 ];
 
-// Makundi manne rasmi ya video yanayotumika Admin na Home.
 export default function Chips({ filt, setFilt }) {
-  useStore();
   return (
     <div className="chips">
       {L.map(([key, label]) => (
