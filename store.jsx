@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { T } from "./i18n.js";
 import { PROMOS, VIDEOS } from "./catalog.js";
 import { supabase } from "./supabase.js";
+import { canonicalGenre } from "./utils.js";
 
 const KEY = "youflix.v1";
 const DEFAULTS = {
@@ -63,7 +64,7 @@ export function StoreProvider({ children }) {
     return () => { alive = false; subscription.unsubscribe(); };
   }, []);
 
-  // Pakua video zote zilizochapishwa kutoka jedwali la media.
+  // Pakua video zote zilizochapishwa kutoka jedwali la media_catalog.
   useEffect(() => {
     if (!supabase) return;
     let alive = true;
@@ -83,12 +84,16 @@ export function StoreProvider({ children }) {
           notify("Taarifa za video hazijapatikana. Jaribu ku-refresh ukurasa.");
           return;
         }
-        const media = data.map((m) => ({
-          id: m.id, title: m.title, type: /series|episode|mfululizo/i.test(m.category || "") ? "series" : "movie",
-          genre: m.genre || m.category || "", year: m.release_year, dur: m.duration || "",
-          desc: m.description || "", poster: m.poster_url || "", src: "",
-          featured: !!m.featured, remote: true,
-        }));
+        const media = data.map((m) => {
+          const normalizedGenre = canonicalGenre(m.genre) || canonicalGenre(m.category) || m.genre || m.category || "";
+          return {
+            id: m.id, title: m.title,
+            type: /series|episode|mfululizo/i.test(m.category || "") ? "series" : "movie",
+            genre: normalizedGenre, year: m.release_year, dur: m.duration || "",
+            desc: m.description || "", poster: m.poster_url || "", src: "",
+            featured: !!m.featured, remote: true,
+          };
+        });
         setState((s) => ({ ...s, media }));
       });
     return () => { alive = false; };
