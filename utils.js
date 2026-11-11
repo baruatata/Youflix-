@@ -1,7 +1,7 @@
 // Vifaa vya msaada visivyotegemea React.
 
 export function ytId(u) {
-  const m = String(u || "").match(/(?:youtu\\.be\\/|v=|embed\\/|shorts\\/)([\\w-]{11})/);
+  const m = String(u || "").match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/);
   return m ? m[1] : null;
 }
 
@@ -56,17 +56,17 @@ export const newSalt = () => Math.random().toString(36).slice(2) + Date.now().to
 
 // 0712 345 678 | 712345678 | +255712345678  →  "255712345678"
 export function normPhone(raw) {
-  let d = String(raw).replace(/\\D/g, "");
+  let d = String(raw).replace(/\D/g, "");
   if (d.indexOf("255") === 0 && d.length > 9) d = d.slice(3);
   if (d.charAt(0) === "0") d = d.slice(1);
   return d.length === 9 ? "255" + d : "";
 }
 export function fmtPhone(c) {
-  const m = /^255(\\d{3})(\\d{3})(\\d{3})$/.exec(c || "");
+  const m = /^255(\d{3})(\d{3})(\d{3})$/.exec(c || "");
   return m ? `+255 ${m[1]} ${m[2]} ${m[3]}` : String(c || "");
 }
 
-export const okImg = (s) => typeof s === "string" && /^(https?:\\/\\/|data:image\\/(jpeg|png|webp);base64,)/i.test(s);
+export const okImg = (s) => typeof s === "string" && /^(https?:\/\/|data:image\/(jpeg|png|webp);base64,)/i.test(s);
 
 // Punguza picha iliyochaguliwa kuwa JPEG nyepesi (data URL)
 export function readImage(file, maxW, cb) {
