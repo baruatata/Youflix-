@@ -21,7 +21,7 @@ export function posterStyle(v, saver) {
 // Normalize old genre names and Nyaraka to the four official genres.
 export function canonicalGenre(value) {
  const s = String(value || "").trim().toLowerCase();
- if (/tamthilia|thamthilia|drama/.test(s)) return "Tamthilia";
+ if (/tamthilia|thamthilia|mfululizo|drama/.test(s)) return "Tamthilia";
  if (/filamu|movie/.test(s)) return "Filamu";
  if (/mawaidha|mahubiri|nasaha|hadithi|nyaraka|documentary/.test(s)) return "Mawaidha";
  if (/vichekesho|comedy/.test(s)) return "Vichekesho";
