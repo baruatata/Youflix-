@@ -58,6 +58,15 @@ export default function Settings({ onLogin }) {
         </div>
       </div>
 
+      <h2 className="sec">Sasisha Youflix</h2>
+      <div className="set">
+        <p className="help">Ikiwa picha za matangazo au mabango ya Hero hazijasasishwa, safisha cache ili Youflix ipakue taarifa mpya.</p>
+        <button className="btn" type="button" onClick={clearYouflixCache} disabled={cacheBusy}>
+          {cacheBusy ? "Inasafisha..." : "Safisha Cache na Sasisha"}
+        </button>
+        <p className="help">Haitafuta akaunti, vifurushi, historia au video zako.</p>
+      </div>
+
       <h2 className="sec">Hali ya kifurushi</h2>
       <div className="set">
         {!me ? (
@@ -96,14 +105,6 @@ export default function Settings({ onLogin }) {
       )}
       <p className="help">Hapa unaweza kuona kifurushi chako na muda uliobaki.</p>
 
-      <h2 className="sec">Sasisha Youflix</h2>
-      <div className="set">
-        <p className="help">Ikiwa picha za matangazo au mabango ya Hero hazijasasishwa, safisha cache ili Youflix ipakue taarifa mpya.</p>
-        <button className="btn" type="button" onClick={clearYouflixCache} disabled={cacheBusy}>
-          {cacheBusy ? "Inasafisha..." : "Safisha Cache na Sasisha"}
-        </button>
-        <p className="help">Haitafuta akaunti, vifurushi, historia au video zako.</p>
-      </div>
     </>
   );
 }
