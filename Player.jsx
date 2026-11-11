@@ -9,12 +9,31 @@ export default function Player({ video, onClose }) {
   const [videoSrc, setVideoSrc] = useState("");
   const [locked, setLocked] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [clock, setClock] = useState(Date.now());
   const el = useRef(null);
   const last = useRef(0);
   const yt = ytId(videoSrc);
-  const activePackage = !!state.me && state.subscription?.status === "active" && new Date(state.subscription.starts_at).getTime() <= Date.now() && new Date(state.subscription.ends_at).getTime() > Date.now();
+  const startsAt = state.subscription?.starts_at ? new Date(state.subscription.starts_at).getTime() : 0;
+  const endsAt = state.subscription?.ends_at ? new Date(state.subscription.ends_at).getTime() : 0;
+  const activePackage = !!state.me && state.subscription?.status === "active" &&
+    Number.isFinite(startsAt) && startsAt <= clock &&
+    Number.isFinite(endsAt) && endsAt > clock;
   const streamId = !yt && /^[a-zA-Z0-9_-]{30,80}$/.test(String(videoSrc || "").trim())
     ? String(videoSrc).trim() : null;
+
+  useEffect(() => {
+    const timer = setInterval(() => setClock(Date.now()), 15000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (activePackage || !started) return;
+    setStarted(false);
+    setVideoSrc("");
+    setLocked(true);
+    if (el.current) { el.current.pause(); el.current.removeAttribute("src"); el.current.load(); }
+    notify("Muda wa kifurushi chako umeisha. Tafadhali jiunge upya ili kuendelea kutazama.");
+  }, [activePackage, started, notify]);
 
   useEffect(() => () => {
     const v = el.current;
@@ -64,7 +83,9 @@ export default function Player({ video, onClose }) {
     } finally { setLoading(false); }
   };
   let stage;
-  if (locked || !activePackage) stage = <div className="empty"><p>Video hii inahitaji kifurushi hai kilicholipiwa na kuthibitishwa na Admin.</p><button className="btn" onClick={() => { onClose(); location.hash = "#join"; }}>Jiunge na kifurushi</button></div>;
+  if (locked || !activePackage) stage = <div className="empty"><p>{state.subscription?.ends_at && new Date(state.subscription.ends_at).getTime() <= clock
+    ? "Kifurushi chako kimeisha. Jiunge upya ili kuendelea kutazama video."
+    : "Video hii inahitaji kifurushi hai kilicholipiwa na kuthibitishwa na Admin."}</p><button className="btn" onClick={() => { onClose(); location.hash = "#join"; }}>Jiunge na kifurushi</button></div>;
   else if (!started) stage = <button className="big" aria-label={t("play")} disabled={loading} onClick={beginPlayback}>{loading ? "..." : "▶"}</button>;
   else if (yt) stage = <iframe title={video.title} allow="autoplay; fullscreen; encrypted-media" allowFullScreen src={`https://www.youtube-nocookie.com/embed/${yt}?autoplay=1&rel=0`} />;
   else if (streamId) stage = <video ref={(v) => { if (v) el.current = v; }} src={videoSrc} controls autoPlay playsInline preload="none" onLoadedMetadata={onMeta} onTimeUpdate={onTime} onError={() => notify(t("videoerr"))} />;
