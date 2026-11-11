@@ -4,7 +4,7 @@ import { useStore } from "./store.jsx";
 
 const CATS = [
   ["drama", "drama", "c_drama"],
-  ["story", "story", "c_story"],
+  ["mawaidha", "book-open", "c_story"],
   ["movie", "movies", "c_movie"],
   ["comedy", "comedy", "c_comedy"],
 ];
