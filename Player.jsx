@@ -64,9 +64,15 @@ export default function Player({ video, onClose }) {
       if (!stored) throw new Error("Video haijapatikana.");
 
       if (!/^https?:\/\//i.test(stored) && !ytId(stored)) {
-        // Public Playback ID: HLS ya Mux inachezwa moja kwa moja bila signed token.
-        setVideoSrc(`https://stream.mux.com/${encodeURIComponent(stored)}.m3u8`);
+        const { data: signed, error: tokenError } = await supabase.functions.invoke("mux-admin", {
+          body: { action: "get-playback-token", playback_id: stored },
+        });
+        if (tokenError) throw new Error(signed?.error || tokenError.message || "Imeshindikana kuthibitisha ruhusa ya video.");
+        if (signed?.error) throw new Error(signed.error);
+        if (!signed?.playback_token) throw new Error("Mux haijatoa token salama ya video.");
+        setVideoSrc(`https://stream.mux.com/${encodeURIComponent(stored)}.m3u8?token=${encodeURIComponent(signed.playback_token)}`);
       } else {
+        // Viungo vya YouTube/vyanzo vya nje vinabaki na tabia yake ya awali.
         setVideoSrc(stored);
       }
       setStarted(true);
