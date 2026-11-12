@@ -69,8 +69,8 @@ export default function MuxUploader({ notify, onSaved }) {
         }
       }
       if (!result?.media?.id) throw new Error("Video bado inachakatwa. Jaribu tena baada ya dakika chache.");
-      setStatus("Video imehifadhiwa kwa Signed Playback. Inasubiri kuchapishwa na Admin.");
-      notify("Video imepakiwa kwa Signed Playback; ichapishe kupitia Admin baada ya ukaguzi.");
+      setStatus("Kiungo cha video kimewekwa.");
+      notify("Kiungo cha video kimewekwa.");
       setTitle(""); setDescription(""); setProgress(0); setCoverFile(null); form.reset(); onSaved?.();
     } catch (error) {
       notify(error?.message || "Imeshindikana kupakia video.");
