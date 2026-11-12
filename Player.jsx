@@ -47,7 +47,7 @@ export default function Player({ video, onClose }) {
   };
 
   const playbackStarted = (event) => {
-    const current = event?.currentTarget?.currentTime ?? event?.target?.currentTime ?? watchPosition.current;
+    const current = event?.currentTarget?.currentTime ?? event?.target?.currentTime ?? el.current?.currentTime ?? watchPosition.current;
     sendWatchHeartbeat(current, true, true);
   };
   const playbackPaused = (event) => {
@@ -55,7 +55,7 @@ export default function Player({ video, onClose }) {
     sendWatchHeartbeat(current, false, true);
   };
   const playbackProgress = (event) => {
-    const current = event?.currentTarget?.currentTime ?? event?.target?.currentTime;
+    const current = event?.currentTarget?.currentTime ?? event?.target?.currentTime ?? el.current?.currentTime;
     if (Number.isFinite(Number(current)) && watchPlaying.current) sendWatchHeartbeat(current, true);
   };
   const startsAt = state.subscription?.starts_at ? new Date(state.subscription.starts_at).getTime() : 0;
@@ -185,7 +185,7 @@ export default function Player({ video, onClose }) {
     : "Video hii inahitaji kifurushi hai kilicholipiwa na kuthibitishwa na Admin."}</p><button className="btn" onClick={() => { onClose(); location.hash = "#join"; }}>Jiunge na kifurushi</button></div>;
   else if (!started) stage = <button className="big" aria-label={t("play")} disabled={loading} onClick={beginPlayback}>{loading ? "..." : "▶"}</button>;
   else if (yt) stage = <iframe title={video.title} allow="autoplay; fullscreen; encrypted-media" allowFullScreen src={`https://www.youtube-nocookie.com/embed/${yt}?autoplay=1&rel=0`} />;
-  else if (muxPlaybackId) stage = <MuxPlayer playbackId={muxPlaybackId} tokens={muxPlaybackToken ? { playback: muxPlaybackToken } : undefined} streamType="on-demand" autoPlay onPlay={playbackStarted} onPause={playbackPaused} onTimeUpdate={playbackProgress} onEnded={playbackPaused} style={{ width: "100%", height: "100%" }} />
+  else if (muxPlaybackId) stage = <MuxPlayer ref={el} playbackId={muxPlaybackId} tokens={muxPlaybackToken ? { playback: muxPlaybackToken } : undefined} streamType="on-demand" autoPlay onPlay={playbackStarted} onPause={playbackPaused} onTimeUpdate={playbackProgress} onEnded={playbackPaused} style={{ width: "100%", height: "100%" }} />
   else stage = <video ref={(v) => { if (v) el.current = v; }} src={videoSrc} controls autoPlay playsInline preload="none" onLoadedMetadata={onMeta} onPlay={playbackStarted} onPause={playbackPaused} onTimeUpdate={(e) => { onTime(e); playbackProgress(e); }} onEnded={playbackPaused} onError={() => notify(t("videoerr"))} />;
 
   return <div id="player" className="player"><div className="player-box">
