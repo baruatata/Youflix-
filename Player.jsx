@@ -71,11 +71,11 @@ export default function Player({ video, onClose }) {
       if (!stored) throw new Error("Video haijapatikana.");
 
       let muxId = "";
-      if (/^https?:\\/\\//i.test(stored)) {
+      if (stored.startsWith("http://") || stored.startsWith("https://")) {
         try {
           const parsed = new URL(stored);
           if (parsed.hostname === "stream.mux.com") {
-            muxId = decodeURIComponent(parsed.pathname.split("/").pop() || "").replace(/\\.m3u8$/i, "");
+            muxId = decodeURIComponent(parsed.pathname.split("/").pop() || "").replace(/\.m3u8$/i, "");
           }
         } catch {}
       } else if (!ytId(stored)) {
