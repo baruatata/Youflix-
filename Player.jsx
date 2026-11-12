@@ -1,20 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "./store.jsx";
 import { ytId } from "./utils.js";
+import MuxPlayer from "@mux/mux-player-react";
 import { supabase } from "./supabase.js";
 
 export default function Player({ video, onClose }) {
   const { state, update, t, notify } = useStore();
   const [started, setStarted] = useState(false);
   const [videoSrc, setVideoSrc] = useState("");
-  const [muxPlaybackUrl, setMuxPlaybackUrl] = useState("");
+  const [muxPlaybackId, setMuxPlaybackId] = useState("");
+  const [muxPlaybackToken, setMuxPlaybackToken] = useState("");
   const [locked, setLocked] = useState(false);
   const [loading, setLoading] = useState(false);
   const [clock, setClock] = useState(Date.now());
   const el = useRef(null);
   const last = useRef(0);
   const yt = ytId(videoSrc);
-  const [muxEmbedUrl, setMuxEmbedUrl] = useState("");
   const startsAt = state.subscription?.starts_at ? new Date(state.subscription.starts_at).getTime() : 0;
   const endsAt = state.subscription?.ends_at ? new Date(state.subscription.ends_at).getTime() : 0;
   const activePackage = !!state.me && state.subscription?.status === "active" &&
@@ -30,8 +31,8 @@ export default function Player({ video, onClose }) {
     if (activePackage || !started) return;
     setStarted(false);
     setVideoSrc("");
-    setMuxPlaybackUrl("");
-    setMuxEmbedUrl("");
+    setMuxPlaybackId("");
+    setMuxPlaybackToken("");
     setLocked(true);
     if (el.current) { el.current.pause(); el.current.removeAttribute("src"); el.current.load(); }
     notify("Muda wa kifurushi chako umeisha. Tafadhali jiunge upya ili kuendelea kutazama.");
@@ -61,38 +62,43 @@ export default function Player({ video, onClose }) {
     if (loading) return;
     setLoading(true);
     setLocked(false);
-    setMuxPlaybackUrl("");
-    setMuxEmbedUrl("");
+    setMuxPlaybackId("");
+    setMuxPlaybackToken("");
     try {
       const { data, error } = await supabase.from("media").select("video_url").eq("id", video.id).single();
       if (error) throw error;
       const stored = String(data?.video_url || "").trim();
       if (!stored) throw new Error("Video haijapatikana.");
 
-      let muxUrl = "";
-      let embedUrl = "";
+      let playbackId = "";
       const iframeSrc = stored.match(/<iframe[^>]*src=["']([^"']+)["']/i)?.[1];
-      if (iframeSrc) {
-        const parsedEmbed = new URL(iframeSrc);
-        if (parsedEmbed.protocol === "https:" && parsedEmbed.hostname === "player.mux.com") embedUrl = parsedEmbed.href;
-      } else if (/^https:\/\/player\.mux\.com\//i.test(stored)) {
-        embedUrl = stored;
-      }
-      if (embedUrl) {
-        setMuxEmbedUrl(embedUrl);
-      } else if (stored.startsWith("http://") || stored.startsWith("https://")) {
-        try {
-          const parsed = new URL(stored);
-          if (parsed.hostname === "stream.mux.com") {
-            muxUrl = `https://stream.mux.com${parsed.pathname.replace(/\\.m3u8$/i, "")}.m3u8`;
+      const candidate = iframeSrc || stored;
+      try {
+        if (/^https:\/\/player\.mux\.com\//i.test(candidate)) {
+          const parsed = new URL(candidate);
+          if (parsed.protocol === "https:" && parsed.hostname === "player.mux.com") {
+            playbackId = decodeURIComponent(parsed.pathname.split("/").filter(Boolean)[0] || "");
           }
-        } catch {}
-      } else if (!ytId(stored)) {
-        muxUrl = `https://stream.mux.com/${encodeURIComponent(stored)}.m3u8`;
-      }
+        } else if (/^https:\/\/stream\.mux\.com\//i.test(candidate)) {
+          const parsed = new URL(candidate);
+          if (parsed.protocol === "https:" && parsed.hostname === "stream.mux.com") {
+            playbackId = decodeURIComponent(parsed.pathname.split("/").filter(Boolean)[0] || "").replace(/\.m3u8$/i, "");
+          }
+        } else if (!/^https?:\/\//i.test(candidate) && !ytId(candidate)) {
+          playbackId = candidate;
+        }
+      } catch {}
 
-      if (muxUrl) {
-        setMuxPlaybackUrl(muxUrl);
+      if (playbackId) {
+        const { data: tokenData, error: tokenError } = await supabase.functions.invoke("mux-admin", {
+          body: { action: "get-playback-token", playback_id: playbackId },
+        });
+        if (tokenError) throw tokenError;
+        if (tokenData?.error) throw new Error(tokenData.error);
+        if (tokenData?.playback_id !== playbackId) throw new Error("Mux haijathibitisha ruhusa ya video hii.");
+        setMuxPlaybackId(playbackId);
+        setMuxPlaybackToken(tokenData.playback_token || "");
+        setVideoSrc("");
       } else {
         setVideoSrc(stored);
       }
@@ -109,8 +115,7 @@ export default function Player({ video, onClose }) {
     : "Video hii inahitaji kifurushi hai kilicholipiwa na kuthibitishwa na Admin."}</p><button className="btn" onClick={() => { onClose(); location.hash = "#join"; }}>Jiunge na kifurushi</button></div>;
   else if (!started) stage = <button className="big" aria-label={t("play")} disabled={loading} onClick={beginPlayback}>{loading ? "..." : "▶"}</button>;
   else if (yt) stage = <iframe title={video.title} allow="autoplay; fullscreen; encrypted-media" allowFullScreen src={`https://www.youtube-nocookie.com/embed/${yt}?autoplay=1&rel=0`} />;
-  else if (muxEmbedUrl) stage = <iframe title={video.title} src={muxEmbedUrl} allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowFullScreen />;
-  else if (muxPlaybackUrl) stage = <video ref={(v) => { if (v) el.current = v; }} src={muxPlaybackUrl} controls autoPlay playsInline preload="none" onLoadedMetadata={onMeta} onTimeUpdate={onTime} onError={() => notify(t("videoerr"))} />
+  else if (muxPlaybackId) stage = <MuxPlayer playbackId={muxPlaybackId} tokens={muxPlaybackToken ? { playback: muxPlaybackToken } : undefined} streamType="on-demand" autoPlay style={{ width: "100%", height: "100%" }} />
   else stage = <video ref={(v) => { if (v) el.current = v; }} src={videoSrc} controls autoPlay playsInline preload="none" onLoadedMetadata={onMeta} onTimeUpdate={onTime} onError={() => notify(t("videoerr"))} />;
 
   return <div id="player" className="player"><div className="player-box">
