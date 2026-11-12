@@ -19,6 +19,15 @@ export default function Player({ video, onClose }) {
   const watchLastSent = useRef(0);
   const watchPosition = useRef(0);
   const watchPlaying = useRef(false);
+  const viewRecorded = useRef(false);
+  const recordVideoView = async () => {
+    if (viewRecorded.current || !state.me || !activePackage || !watchSessionId.current || !supabase) return;
+    viewRecorded.current = true;
+    try {
+      const { error } = await supabase.rpc('record_video_view', { p_session_id: watchSessionId.current, p_media_id: video.id });
+      if (error) viewRecorded.current = false;
+    } catch { viewRecorded.current = false; }
+  };
   const yt = ytId(videoSrc);
 
   if (!watchSessionId.current && typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -47,6 +56,7 @@ export default function Player({ video, onClose }) {
   };
 
   const playbackStarted = (event) => {
+    recordVideoView();
     const current = event?.currentTarget?.currentTime ?? event?.target?.currentTime ?? el.current?.currentTime ?? watchPosition.current;
     sendWatchHeartbeat(current, true, true);
   };
@@ -184,7 +194,7 @@ export default function Player({ video, onClose }) {
     ? "Kifurushi chako kimeisha. Jiunge upya ili kuendelea kutazama video."
     : "Video hii inahitaji kifurushi hai kilicholipiwa na kuthibitishwa na Admin."}</p><button className="btn" onClick={() => { onClose(); location.hash = "#join"; }}>Jiunge na kifurushi</button></div>;
   else if (!started) stage = <button className="big" aria-label={t("play")} disabled={loading} onClick={beginPlayback}>{loading ? "..." : "▶"}</button>;
-  else if (yt) stage = <iframe title={video.title} allow="autoplay; fullscreen; encrypted-media" allowFullScreen src={`https://www.youtube-nocookie.com/embed/${yt}?autoplay=1&rel=0`} />;
+  else if (yt) stage = <iframe title={video.title} allow="autoplay; fullscreen; encrypted-media" allowFullScreen onLoad={recordVideoView} src={`https://www.youtube-nocookie.com/embed/${yt}?autoplay=1&rel=0`} />;
   else if (muxPlaybackId) stage = <MuxPlayer ref={el} playbackId={muxPlaybackId} tokens={muxPlaybackToken ? { playback: muxPlaybackToken } : undefined} streamType="on-demand" autoPlay onPlay={playbackStarted} onPause={playbackPaused} onTimeUpdate={playbackProgress} onEnded={playbackPaused} style={{ width: "100%", height: "100%" }} />
   else stage = <video ref={(v) => { if (v) el.current = v; }} src={videoSrc} controls autoPlay playsInline preload="none" onLoadedMetadata={onMeta} onPlay={playbackStarted} onPause={playbackPaused} onTimeUpdate={(e) => { onTime(e); playbackProgress(e); }} onEnded={playbackPaused} onError={() => notify(t("videoerr"))} />;
 
