@@ -70,13 +70,25 @@ export default function Player({ video, onClose }) {
       const stored = String(data?.video_url || "").trim();
       if (!stored) throw new Error("Video haijapatikana.");
 
-      if (!/^https?:\/\//i.test(stored) && !ytId(stored)) {
+      let muxId = "";
+      if (/^https?:\\/\\//i.test(stored)) {
+        try {
+          const parsed = new URL(stored);
+          if (parsed.hostname === "stream.mux.com") {
+            muxId = decodeURIComponent(parsed.pathname.split("/").pop() || "").replace(/\\.m3u8$/i, "");
+          }
+        } catch {}
+      } else if (!ytId(stored)) {
+        muxId = stored;
+      }
+
+      if (muxId) {
         const { data: signed, error: tokenError } = await supabase.functions.invoke("mux-admin", {
-          body: { action: "get-playback-token", playback_id: stored },
+          body: { action: "get-playback-token", playback_id: muxId },
         });
         if (tokenError) throw new Error(signed?.error || tokenError.message || "Imeshindikana kuthibitisha ruhusa ya video.");
         if (signed?.error) throw new Error(signed.error);
-        setMuxPlaybackId(stored);
+        setMuxPlaybackId(signed?.playback_id || muxId);
         setMuxPlaybackToken(signed?.playback_token || "");
       } else {
         setVideoSrc(stored);
