@@ -112,7 +112,7 @@ export default function Player({ video, onClose }) {
         }).catch(() => {});
       }
     }
-  }, []);
+  }, [state.me, activePackage, video.remote, video.id]);
 
   const meta = [video.genre, video.year, video.dur].filter(Boolean).join(" • ");
   const beginPlayback = async () => {
