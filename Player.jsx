@@ -69,12 +69,8 @@ export default function Player({ video, onClose }) {
         });
         if (tokenError) throw new Error(playback?.error || tokenError.message || "Imeshindikana kuthibitisha ruhusa ya video.");
         if (playback?.error) throw new Error(playback.error);
-        if (playback?.asset_status && playback.asset_status !== "ready") {
-          throw new Error("Video bado haijawa tayari kucheza. Hali: " + playback.asset_status);
-        }
         const token = playback?.playback_token;
-        const playbackId = playback?.playback_id || stored;
-        const url = `https://stream.mux.com/${encodeURIComponent(playbackId)}.m3u8`;
+        const url = `https://stream.mux.com/${encodeURIComponent(stored)}.m3u8`;
         setVideoSrc(token ? `${url}?token=${encodeURIComponent(token)}` : url);
       } else {
         setVideoSrc(stored);
@@ -92,16 +88,7 @@ export default function Player({ video, onClose }) {
     : "Video hii inahitaji kifurushi hai kilicholipiwa na kuthibitishwa na Admin."}</p><button className="btn" onClick={() => { onClose(); location.hash = "#join"; }}>Jiunge na kifurushi</button></div>;
   else if (!started) stage = <button className="big" aria-label={t("play")} disabled={loading} onClick={beginPlayback}>{loading ? "..." : "▶"}</button>;
   else if (yt) stage = <iframe title={video.title} allow="autoplay; fullscreen; encrypted-media" allowFullScreen src={`https://www.youtube-nocookie.com/embed/${yt}?autoplay=1&rel=0`} />;
-  else stage = <video ref={(v) => { if (v) el.current = v; }} src={videoSrc} controls autoPlay playsInline preload="metadata" onLoadedMetadata={onMeta} onTimeUpdate={onTime} onError={() => {
-    const code = el.current?.error?.code;
-    const messages = {
-      1: "Uchezaji wa video umesitishwa.",
-      2: "Hitilafu ya mtandao imetokea wakati wa kupokea video. Hakiki muunganisho kisha jaribu tena.",
-      3: "Mux imetuma video isiyoweza kusomwa na simu. Inaweza kuhitaji kuchakatwa tena.",
-      4: "Kiungo au umbizo la video halisomeki. Admin ahakiki Mux Playback ID.",
-    };
-    notify(messages[code] || (t("videoerr") + (code ? " (Code " + code + ")" : "")));
-  }} />;
+  else stage = <video ref={(v) => { if (v) el.current = v; }} src={videoSrc} controls autoPlay playsInline preload="none" onLoadedMetadata={onMeta} onTimeUpdate={onTime} onError={() => notify(t("videoerr"))} />;
 
   return <div id="player" className="player"><div className="player-box">
     <button className="close" aria-label={t("close")} onClick={onClose}>✕</button>
