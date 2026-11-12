@@ -41,7 +41,13 @@ export default function Settings({ onLogin }) {
   const validEnd = endsAt !== null && Number.isFinite(endsAt);
   const active = !!sub && sub.status === "active" && validStart && validEnd && endsAt > now;
   const expired = !!sub && (sub.status === "expired" || sub.status === "active" && validEnd && endsAt <= now);
-  const remaining = active ? Math.max(0, Math.ceil((endsAt - now) / 86400000)) : null;
+  const remainingMinutes = active ? Math.max(0, Math.ceil((endsAt - now) / 60000)) : null;
+  const remainingHours = remainingMinutes === null ? null : Math.floor(remainingMinutes / 60);
+  const remainingRemainder = remainingMinutes === null ? null : remainingMinutes % 60;
+  const remainingLabel = remainingMinutes === null ? "" :
+    remainingMinutes < 1 ? "Chini ya dakika 1" :
+    remainingHours > 0 ? `${remainingHours} saa na ${remainingRemainder} dakika` :
+    `${remainingRemainder} dakika`;
   const statusLabel = active ? "KINAENDELEA" : expired ? "KIMEISHA" :
     sub?.status === "pending" ? "INASUBIRI UTHIBITISHO" :
     sub?.status === "cancelled" ? "IMEFUTWA" : sub?.status || "HAIJAAMILISHWA";
@@ -73,7 +79,7 @@ export default function Settings({ onLogin }) {
             </div>
             <div className="toggle"><span>Tarehe ya kuanza</span><strong>{dateText(sub.starts_at)}</strong></div>
             <div className="toggle"><span>Tarehe ya mwisho</span><strong>{dateText(sub.ends_at)}</strong></div>
-            {active && remaining !== null && <div className="toggle"><span>Muda uliobaki</span><strong>{remaining} {remaining === 1 ? "siku" : "siku"}</strong></div>}
+            {active && remainingLabel && <div className="toggle"><span>Muda uliobaki</span><strong>{remainingLabel}</strong></div>}
             {expired && (
               <div role="alert" style={{ padding: 15, borderRadius: 10, border: "1px solid #e5091466", background: "#e5091418" }}>
                 <strong style={{ color: "#ff5963" }}>KIFURUSHI CHAKO KIMEISHA</strong>
