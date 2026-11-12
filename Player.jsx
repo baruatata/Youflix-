@@ -14,6 +14,7 @@ export default function Player({ video, onClose }) {
   const el = useRef(null);
   const last = useRef(0);
   const yt = ytId(videoSrc);
+  const [muxEmbedUrl, setMuxEmbedUrl] = useState("");
   const startsAt = state.subscription?.starts_at ? new Date(state.subscription.starts_at).getTime() : 0;
   const endsAt = state.subscription?.ends_at ? new Date(state.subscription.ends_at).getTime() : 0;
   const activePackage = !!state.me && state.subscription?.status === "active" &&
@@ -30,6 +31,7 @@ export default function Player({ video, onClose }) {
     setStarted(false);
     setVideoSrc("");
     setMuxPlaybackUrl("");
+    setMuxEmbedUrl("");
     setLocked(true);
     if (el.current) { el.current.pause(); el.current.removeAttribute("src"); el.current.load(); }
     notify("Muda wa kifurushi chako umeisha. Tafadhali jiunge upya ili kuendelea kutazama.");
@@ -60,6 +62,7 @@ export default function Player({ video, onClose }) {
     setLoading(true);
     setLocked(false);
     setMuxPlaybackUrl("");
+    setMuxEmbedUrl("");
     try {
       const { data, error } = await supabase.from("media").select("video_url").eq("id", video.id).single();
       if (error) throw error;
@@ -67,7 +70,17 @@ export default function Player({ video, onClose }) {
       if (!stored) throw new Error("Video haijapatikana.");
 
       let muxUrl = "";
-      if (stored.startsWith("http://") || stored.startsWith("https://")) {
+      let embedUrl = "";
+      const iframeSrc = stored.match(/<iframe[^>]*src=["']([^"']+)["']/i)?.[1];
+      if (iframeSrc) {
+        const parsedEmbed = new URL(iframeSrc);
+        if (parsedEmbed.protocol === "https:" && parsedEmbed.hostname === "player.mux.com") embedUrl = parsedEmbed.href;
+      } else if (/^https:\/\/player\.mux\.com\//i.test(stored)) {
+        embedUrl = stored;
+      }
+      if (embedUrl) {
+        setMuxEmbedUrl(embedUrl);
+      } else if (stored.startsWith("http://") || stored.startsWith("https://")) {
         try {
           const parsed = new URL(stored);
           if (parsed.hostname === "stream.mux.com") {
@@ -96,6 +109,7 @@ export default function Player({ video, onClose }) {
     : "Video hii inahitaji kifurushi hai kilicholipiwa na kuthibitishwa na Admin."}</p><button className="btn" onClick={() => { onClose(); location.hash = "#join"; }}>Jiunge na kifurushi</button></div>;
   else if (!started) stage = <button className="big" aria-label={t("play")} disabled={loading} onClick={beginPlayback}>{loading ? "..." : "▶"}</button>;
   else if (yt) stage = <iframe title={video.title} allow="autoplay; fullscreen; encrypted-media" allowFullScreen src={`https://www.youtube-nocookie.com/embed/${yt}?autoplay=1&rel=0`} />;
+  else if (muxEmbedUrl) stage = <iframe title={video.title} src={muxEmbedUrl} allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowFullScreen />;
   else if (muxPlaybackUrl) stage = <video ref={(v) => { if (v) el.current = v; }} src={muxPlaybackUrl} controls autoPlay playsInline preload="none" onLoadedMetadata={onMeta} onTimeUpdate={onTime} onError={() => notify(t("videoerr"))} />
   else stage = <video ref={(v) => { if (v) el.current = v; }} src={videoSrc} controls autoPlay playsInline preload="none" onLoadedMetadata={onMeta} onTimeUpdate={onTime} onError={() => notify(t("videoerr"))} />;
 
