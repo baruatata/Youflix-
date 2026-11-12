@@ -70,6 +70,18 @@ export default function Player({ video, onClose }) {
       const stored = String(data?.video_url || "").trim();
       if (!stored) throw new Error("Video haijapatikana.");
 
+      if (stored.startsWith("storage://")) {
+        const { data: storageData, error: storageError } = await supabase.functions.invoke("mux-admin", {
+          body: { action: "get-storage-playback-url", media_id: video.id },
+        });
+        if (storageError) throw storageError;
+        if (storageData?.error) throw new Error(storageData.error);
+        if (!storageData?.signed_url) throw new Error("Kiungo salama cha video hakijapatikana.");
+        setVideoSrc(storageData.signed_url);
+        setStarted(true);
+        return;
+      }
+
       let playbackId = "";
       const iframeSrc = stored.match(/<iframe[^>]*src=["']([^"']+)["']/i)?.[1];
       const candidate = iframeSrc || stored;
