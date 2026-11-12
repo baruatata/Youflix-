@@ -17,7 +17,7 @@ export default function Home({ filt, setFilt, onOpen }) {
       {groups.map((group) => (
         <Rail key={group} title={group}
           items={visibleVideos.filter((video) => canonicalGenre(video.genre) === group)}
-          onOpen={onOpen} />
+          onOpen={onOpen} showMeta={false} />
       ))}
     </>
   );
