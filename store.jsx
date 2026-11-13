@@ -115,39 +115,48 @@ export function StoreProvider({ children }) {
     return () => { alive = false; };
   }, []);
 
-  // Hero huchukuliwa kila ukurasa unapofunguliwa au simu inapopata mtandao.
-  // Chanzo ni Supabase Storage/DB; localStorage na cache ya browser si hifadhi ya picha.
+  // Hero hupakiwa moja kwa moja kutoka Supabase, bila kutegemea cache ya simu.
   useEffect(() => {
     if (!supabase) return;
     let alive = true;
     let requestId = 0;
+    let retryTimer;
     const loadBanners = async () => {
       const currentRequest = ++requestId;
-      const { data, error } = await supabase.from("hero_banners")
+      let result = await supabase.from("hero_banners")
         .select("id,title,subtitle,image_url,is_active,sort_order,storage_path")
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
+      // Ikiwa schema ya storage_path haipo kwenye mazingira fulani, endelea kutumia image_url.
+      if (result.error) {
+        console.warn("Youflix hero extended query failed; retrying compatible query:", result.error);
+        result = await supabase.from("hero_banners")
+          .select("id,title,subtitle,image_url,is_active,sort_order")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true });
+      }
       if (!alive || currentRequest !== requestId) return;
-      if (error) {
-        console.error("Youflix hero banners load failed:", error);
+      if (result.error || !Array.isArray(result.data)) {
+        console.error("Youflix hero banners load failed:", result.error);
+        retryTimer = setTimeout(loadBanners, 8000);
         return;
       }
-      if (!Array.isArray(data)) return;
-      const remote = data.map((b) => {
+      const remote = result.data.map((b) => {
         const storageUrl = b.storage_path
           ? supabase.storage.from("hero-banners").getPublicUrl(b.storage_path).data?.publicUrl
           : "";
         return {
           id: b.id,
-          // URL ya Storage inazalishwa upya kila mara kutoka path ya kudumu.
-          img: storageUrl || b.image_url || "",
-          fallbackImg: storageUrl && b.image_url && storageUrl !== b.image_url ? b.image_url : "",
+          // Tumia URL halisi iliyohifadhiwa na Admin kwanza; path ni fallback.
+          img: b.image_url || storageUrl || "",
+          fallbackImg: storageUrl && b.image_url && storageUrl !== b.image_url ? storageUrl : "",
           alt: b.title || b.subtitle || "Youflix",
           remote: true,
           storage_path: b.storage_path || null,
         };
       }).filter((b) => !!b.img);
       setState((s) => ({ ...s, promos: remote }));
+      if (!remote.length) retryTimer = setTimeout(loadBanners, 8000);
     };
     loadBanners();
     const onOnline = () => loadBanners();
@@ -157,6 +166,7 @@ export function StoreProvider({ children }) {
     return () => {
       alive = false;
       requestId++;
+      clearTimeout(retryTimer);
       window.removeEventListener("online", onOnline);
       document.removeEventListener("visibilitychange", onVisible);
     };
