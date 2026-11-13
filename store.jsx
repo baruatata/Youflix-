@@ -115,40 +115,51 @@ export function StoreProvider({ children }) {
     return () => { alive = false; };
   }, []);
 
-  // Pakua mabango ya Hero kutoka Supabase. Rekodi za zamani zilizobaki
-  // kwenye localStorage hazichanganywi na matangazo ya sasa: zinaweza kuwa
-  // na URL zilizopitwa na wakati na kusababisha slide ya picha iliyovunjika.
+  // Hero huchukuliwa kila ukurasa unapofunguliwa au simu inapopata mtandao.
+  // Chanzo ni Supabase Storage/DB; localStorage na cache ya browser si hifadhi ya picha.
   useEffect(() => {
     if (!supabase) return;
     let alive = true;
-    supabase.from("hero_banners")
-      .select("id,title,subtitle,image_url,is_active,sort_order,storage_path")
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true })
-      .then(({ data, error }) => {
-        if (!alive) return;
-        if (error) {
-          console.error("Youflix hero banners load failed:", error);
-          return;
-        }
-        if (!Array.isArray(data)) return;
-        const remote = data.map((b) => {
-          // image_url ndiyo URL iliyohifadhiwa na Admin na imethibitishwa
-          // kufunguka moja kwa moja. Tumia storage_path kama njia mbadala tu.
-          const storedUrl = b.storage_path
-            ? supabase.storage.from("hero-banners").getPublicUrl(b.storage_path).data?.publicUrl
-            : "";
-          return {
-            id: b.id,
-            img: b.image_url || storedUrl || "",
-            alt: b.title || b.subtitle || "Youflix",
-            remote: true,
-            storage_path: b.storage_path || null,
-          };
-        }).filter((b) => !!b.img);
-        setState((s) => ({ ...s, promos: remote }));
-      });
-    return () => { alive = false; };
+    let requestId = 0;
+    const loadBanners = async () => {
+      const currentRequest = ++requestId;
+      const { data, error } = await supabase.from("hero_banners")
+        .select("id,title,subtitle,image_url,is_active,sort_order,storage_path")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (!alive || currentRequest !== requestId) return;
+      if (error) {
+        console.error("Youflix hero banners load failed:", error);
+        return;
+      }
+      if (!Array.isArray(data)) return;
+      const remote = data.map((b) => {
+        const storageUrl = b.storage_path
+          ? supabase.storage.from("hero-banners").getPublicUrl(b.storage_path).data?.publicUrl
+          : "";
+        return {
+          id: b.id,
+          // URL ya Storage inazalishwa upya kila mara kutoka path ya kudumu.
+          img: storageUrl || b.image_url || "",
+          fallbackImg: storageUrl && b.image_url && storageUrl !== b.image_url ? b.image_url : "",
+          alt: b.title || b.subtitle || "Youflix",
+          remote: true,
+          storage_path: b.storage_path || null,
+        };
+      }).filter((b) => !!b.img);
+      setState((s) => ({ ...s, promos: remote }));
+    };
+    loadBanners();
+    const onOnline = () => loadBanners();
+    const onVisible = () => { if (!document.hidden) loadBanners(); };
+    window.addEventListener("online", onOnline);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      alive = false;
+      requestId++;
+      window.removeEventListener("online", onOnline);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, []);
 
   // Hifadhi mapendeleo ya ndani; ruhusa za akaunti na kifurushi zinatoka Supabase.
