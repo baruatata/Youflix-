@@ -115,19 +115,36 @@ export function StoreProvider({ children }) {
     return () => { alive = false; };
   }, []);
 
-  // Pakua mabango ya Hero.
+  // Pakua mabango ya Hero kutoka Supabase. Rekodi za zamani zilizobaki
+  // kwenye localStorage hazichanganywi na matangazo ya sasa: zinaweza kuwa
+  // na URL zilizopitwa na wakati na kusababisha slide ya picha iliyovunjika.
   useEffect(() => {
     if (!supabase) return;
     let alive = true;
-    supabase.from("hero_banners").select("id,title,subtitle,image_url,is_active,sort_order,storage_path")
-      .eq("is_active", true).order("sort_order", { ascending: true })
+    supabase.from("hero_banners")
+      .select("id,title,subtitle,image_url,is_active,sort_order,storage_path")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
       .then(({ data, error }) => {
-        if (!alive || error || !Array.isArray(data)) return;
-        const remote = data.map((b) => ({ id: b.id, img: b.image_url, alt: b.title || b.subtitle || "", remote: true, storage_path: b.storage_path || null }));
-        setState((s) => {
-          const local = (s.promos || []).filter((p) => !p.remote);
-          return { ...s, promos: [...local, ...remote] };
-        });
+        if (!alive) return;
+        if (error) {
+          console.error("Youflix hero banners load failed:", error);
+          return;
+        }
+        if (!Array.isArray(data)) return;
+        const remote = data.map((b) => {
+          const storedUrl = b.storage_path
+            ? supabase.storage.from("hero-banners").getPublicUrl(b.storage_path).data?.publicUrl
+            : "";
+          return {
+            id: b.id,
+            img: storedUrl || b.image_url || "",
+            alt: b.title || b.subtitle || "Youflix",
+            remote: true,
+            storage_path: b.storage_path || null,
+          };
+        }).filter((b) => !!b.img);
+        setState((s) => ({ ...s, promos: remote }));
       });
     return () => { alive = false; };
   }, []);
