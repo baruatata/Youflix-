@@ -30,8 +30,7 @@ export default function Hero() {
     return () => link.remove();
   }, [promos]);
 
-  if (!n) return null;
-  const cur = i % n;
+  const cur = n ? i % n : 0;
   const onEnd = (e) => {
     if (x0.current == null) return;
     const dx = e.changedTouches[0].clientX - x0.current;
@@ -42,7 +41,7 @@ export default function Hero() {
   return (
     <section className="hero" aria-roledescription="carousel"
       onTouchStart={(e) => { x0.current = e.touches[0].clientX; }} onTouchEnd={onEnd}>
-      {promos.map((p, k) => (
+      {n ? promos.map((p, k) => (
         <div key={p.id} className={"slide promo" + (k === cur ? " on" : "")}>
           {p.img && <img className="hero-image" src={p.img} alt={p.alt || ""}
             data-fallback={p.fallbackImg || ""}
@@ -58,7 +57,7 @@ export default function Hero() {
             loading={k === 0 ? "eager" : "lazy"}
             fetchPriority={k === cur ? "high" : "auto"} decoding="async" />}
         </div>
-      ))}
+      )) : <div className="slide promo on" aria-hidden="true" />}
       {n > 1 && <div className="dots">{promos.map((p, k) => <b key={p.id} className={k === cur ? "on" : ""} />)}</div>}
     </section>
   );
