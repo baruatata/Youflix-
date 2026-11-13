@@ -148,8 +148,8 @@ export function StoreProvider({ children }) {
         return {
           id: b.id,
           // Tumia URL halisi iliyohifadhiwa na Admin kwanza; path ni fallback.
-          img: b.image_url || storageUrl || "",
-          fallbackImg: storageUrl && b.image_url && storageUrl !== b.image_url ? storageUrl : "",
+          img: storageUrl || b.image_url || "",
+          fallbackImg: storageUrl && b.image_url && storageUrl !== b.image_url ? b.image_url : "",
           alt: b.title || b.subtitle || "Youflix",
           remote: true,
           storage_path: b.storage_path || null,
@@ -190,7 +190,7 @@ export function StoreProvider({ children }) {
     const remote = state.media || [];
     return remote.length ? remote : VIDEOS.concat(state.custom || []);
   }, [state.media, state.custom]);
-  const promos = useMemo(() => PROMOS.filter((p) => !(state.hidePromos || []).includes(p.id)).concat(state.promos || []), [state.hidePromos, state.promos]);
+  const promos = useMemo(() => (state.promos || []).concat(PROMOS.filter((p) => !(state.hidePromos || []).includes(p.id))), [state.hidePromos, state.promos]);
   const me = useMemo(() => state.users.find((u) => u.id === state.me) || null, [state.users, state.me]);
 
   const logout = useCallback(async () => {
