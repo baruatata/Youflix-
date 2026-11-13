@@ -133,12 +133,14 @@ export function StoreProvider({ children }) {
         }
         if (!Array.isArray(data)) return;
         const remote = data.map((b) => {
+          // image_url ndiyo URL iliyohifadhiwa na Admin na imethibitishwa
+          // kufunguka moja kwa moja. Tumia storage_path kama njia mbadala tu.
           const storedUrl = b.storage_path
             ? supabase.storage.from("hero-banners").getPublicUrl(b.storage_path).data?.publicUrl
             : "";
           return {
             id: b.id,
-            img: storedUrl || b.image_url || "",
+            img: b.image_url || storedUrl || "",
             alt: b.title || b.subtitle || "Youflix",
             remote: true,
             storage_path: b.storage_path || null,
