@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "./store.jsx";
 
-// Hero hutanguliza picha ya kwanza na kupakia mabango yote mapema ili yasichelewe kuonekana.
+// Hero hutumia URL za kudumu za Supabase Storage; haitegemei cache ya simu.
 export default function Hero() {
   const { promos } = useStore();
   const n = promos.length;
@@ -12,6 +12,10 @@ export default function Hero() {
     if (n < 2) return undefined;
     const id = setInterval(() => { if (!document.hidden) setI((k) => (k + 1) % n); }, 4500);
     return () => clearInterval(id);
+  }, [n]);
+
+  useEffect(() => {
+    setI((k) => (n ? k % n : 0));
   }, [n]);
 
   useEffect(() => {
@@ -41,7 +45,18 @@ export default function Hero() {
       {promos.map((p, k) => (
         <div key={p.id} className={"slide promo" + (k === cur ? " on" : "")}>
           {p.img && <img className="hero-image" src={p.img} alt={p.alt || ""}
-            loading="eager" fetchPriority={k === 0 ? "high" : "auto"} decoding="async" />}
+            data-fallback={p.fallbackImg || ""}
+            onError={(e) => {
+              const fallback = e.currentTarget.dataset.fallback;
+              if (fallback && e.currentTarget.src !== fallback) {
+                e.currentTarget.src = fallback;
+                e.currentTarget.dataset.fallback = "";
+              } else {
+                e.currentTarget.style.visibility = "hidden";
+              }
+            }}
+            loading={k === 0 ? "eager" : "lazy"}
+            fetchPriority={k === cur ? "high" : "auto"} decoding="async" />}
         </div>
       ))}
       {n > 1 && <div className="dots">{promos.map((p, k) => <b key={p.id} className={k === cur ? "on" : ""} />)}</div>}
