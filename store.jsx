@@ -145,15 +145,12 @@ export function StoreProvider({ children }) {
         const storageUrl = b.storage_path
           ? supabase.storage.from("hero-banners").getPublicUrl(b.storage_path).data?.publicUrl
           : "";
-        // Pakua nakala nyepesi ya Hero (WebP, upana wa 1280px, quality 70).
-        // Faili asili kwenye Supabase hazibadilishwi; URL asili hubaki fallback.
-        const optimizedUrl = storageUrl
-          ? storageUrl.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/") + "?width=1280&quality=70&format=webp"
-          : "";
+        // Tumia URL ya faili asili moja kwa moja ili kuepuka hitilafu za image-transform.
+        // Picha hazibadilishwi; ukubwa wa kuonyeshwa unadhibitiwa na Hero kwenye ukurasa.
         return {
           id: b.id,
-          img: optimizedUrl || storageUrl || b.image_url || "",
-          fallbackImg: storageUrl || b.image_url || "",
+          img: storageUrl || b.image_url || "",
+          fallbackImg: b.image_url || storageUrl || "",
           alt: b.title || b.subtitle || "Youflix",
           remote: true,
           storage_path: b.storage_path || null,
