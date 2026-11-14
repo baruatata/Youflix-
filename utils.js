@@ -18,12 +18,13 @@ export function posterStyle(v, saver) {
   return { backgroundImage: `linear-gradient(160deg,hsl(${h},60%,28%),hsl(${(h + 40) % 360},70%,10%))` };
 }
 
-// Normalize old genre names and database categories to the four official genres.
+// Normalize old genre names and database categories to the official genres.
 export function canonicalGenre(value) {
  const s = String(value || "").trim().toLowerCase();
  if (/tamthilia|thamthilia|mfululizo|drama/.test(s)) return "Tamthilia";
  if (/filamu|movie/.test(s)) return "Filamu";
- if (/mawaidha|mahubiri|nasaha|hadithi|nyaraka|documentary/.test(s)) return "Mawaidha";
+ if (/documentary/.test(s)) return "Documentary";
+ if (/mawaidha|mahubiri|nasaha|hadithi|nyaraka/.test(s)) return "Mawaidha";
  if (/vichekesho|comedy/.test(s)) return "Vichekesho";
  return "";
 }
@@ -32,11 +33,13 @@ export function canonicalGenre(value) {
 const RX = {
   drama: /tamthilia|thamthilia|mfululizo|drama/i,
   movie: /filamu|movie/i,
-  mawaidha: /mawaidha|mahubiri|nasaha|hadithi|nyaraka|documentary/i,
+  mawaidha: /mawaidha|mahubiri|nasaha|hadithi|nyaraka/i,
+  documentary: /documentary|nyaraka\s*film/i,
   comedy: /vichekesho|comedy/i,
 };
 export function filterVideos(videos, filt) {
   if (filt === "drama") return videos.filter((x) => canonicalGenre(x.genre) === "Tamthilia");
+  if (filt === "documentary") return videos.filter((x) => canonicalGenre(x.genre) === "Documentary");
   if (RX[filt]) return videos.filter((x) => RX[filt].test(x.genre || ""));
   return videos;
 }
