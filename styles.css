@@ -105,7 +105,7 @@ h2.sec{font-size:17px;margin:18px 14px 8px}
 .dots b.on{width:34px;background:var(--grad)}
 
 /* Chips za kuchuja */
-.chips{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:12px 14px 4px}
+.chips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:12px 14px 4px}
 .chip{flex:0 0 auto;background:#222;border:0;border-radius:8px;padding:10px 22px;font-size:14px;cursor:pointer;color:#fff}
 .chip.on{background:var(--grad)}
 .chips .chip{min-width:0;padding:11px 2px;font-size:clamp(11px,3.3vw,14px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
