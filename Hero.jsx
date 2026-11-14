@@ -42,7 +42,7 @@ export default function Hero() {
     link.fetchPriority = "high";
     document.head.appendChild(link);
     return () => link.remove();
-  }, [visiblePromos]);
+  }, [promos, failedIds]);
 
   const cur = n ? i % n : 0;
   const onEnd = (e) => {
