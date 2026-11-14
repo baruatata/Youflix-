@@ -7,7 +7,7 @@ import MuxUploader from "./MuxUploader.jsx";
 
 // Barua pepe ya admin haiko wazi kwenye msimbo — kuna alama yake iliyosimbwa (SHA-256) tu.
 // Ili kubadilisha admin: sha256("barua@pepe.com" kwa herufi ndogo) na uiweke hapa (pamoja na toleo mbadala la "f..." kwa vivinjari visivyo na crypto.subtle).
-const GENRES = ["Tamthilia", "Filamu", "Mawaidha", "Vichekesho"];
+const GENRES = ["Tamthilia", "Filamu", "Mawaidha", "Vichekesho", "Documentary"];
 
 export default function Admin({ onClose }) {
   const { state, update, t, notify, videos, promos } = useStore();
@@ -221,7 +221,7 @@ export default function Admin({ onClose }) {
       }
     }
     const rec = {
-      title: o.title, category: o.genre === "Tamthilia" ? "Mfululizo" : "Filamu",
+      title: o.title, category: o.genre === "Tamthilia" ? "Mfululizo" : o.genre === "Documentary" ? "Nyaraka" : "Filamu",
       genre: o.genre || "", release_year: parseInt(o.year, 10) || new Date().getFullYear(),
       duration: o.dur || "", description: o.desc || "", poster_url: img || null, published: true,
     };
