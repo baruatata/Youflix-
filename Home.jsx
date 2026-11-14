@@ -7,7 +7,7 @@ import { canonicalGenre, filterVideos } from "./utils.js";
 export default function Home({ filt, setFilt, onOpen }) {
   const { t, videos } = useStore();
   const visibleVideos = filterVideos(videos, filt);
-  const groups = ["Tamthilia", "Filamu", "Mawaidha", "Vichekesho"];
+  const groups = ["Tamthilia", "Filamu", "Mawaidha", "Vichekesho", "Documentary"];
 
   return (
     <>
