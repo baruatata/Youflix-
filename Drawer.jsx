@@ -7,6 +7,7 @@ const CATS = [
   ["mawaidha", "book-open", "c_story"],
   ["movie", "movies", "c_movie"],
   ["comedy", "comedy", "c_comedy"],
+  ["documentary", "book-open", "Documentary"],
 ];
 
 export default function Drawer({ open, onClose, route, filt, onCategory, onSearch, onLogin }) {
