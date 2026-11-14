@@ -4,6 +4,7 @@ const L = [
   ["movie", "Filamu"],
   ["mawaidha", "Mawaidha"],
   ["comedy", "Vichekesho"],
+  ["documentary", "Documentary"],
 ];
 
 export default function Chips({ filt, setFilt }) {
