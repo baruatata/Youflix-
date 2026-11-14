@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "./supabase.js";
 
-const GENRES = ["Tamthilia", "Filamu", "Mawaidha", "Vichekesho"];
+const GENRES = ["Tamthilia", "Filamu", "Mawaidha", "Vichekesho", "Documentary"];
 
 export default function MuxUploader({ notify, onSaved }) {
   const [busy, setBusy] = useState(false);
@@ -52,7 +52,7 @@ export default function MuxUploader({ notify, onSaved }) {
       if (coverError) throw new Error("Imeshindikana kuhifadhi cover: " + coverError.message);
       const posterUrl = supabase.storage.from("hero-banners").getPublicUrl(coverPath).data.publicUrl;
 
-      const category = genre === "Tamthilia" ? "Mfululizo" : genre === "Mawaidha" ? "Nyaraka" : "Filamu";
+      const category = genre === "Tamthilia" ? "Mfululizo" : (genre === "Mawaidha" || genre === "Documentary") ? "Nyaraka" : "Filamu";
       let result = null;
       for (let attempt = 0; attempt < 120; attempt++) {
         setStatus("Mux inachakata video... (" + (attempt + 1) + ")");
